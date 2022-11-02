@@ -6,7 +6,7 @@ from robot import ForwardKinematics, Point, InverseKinematics, distance_between_
 def resize_rotation_matrix(original_rotation, size):
     if size != original_rotation.shape[0]:
         ident = np.identity(size)
-        ident[0:size-1, 0:size-1] = original_rotation
+        ident[0:original_rotation.shape[0], 0:original_rotation.shape[0]] = original_rotation
         return ident
     else:
         return original_rotation
@@ -22,17 +22,17 @@ class forward_kinematics_unittests(unittest.TestCase):
     rot_x_matrix = np.array([[1,0,0],
                             [0,cos(theta),-sin(theta)],
                             [0,sin(theta),cos(theta)]])
-    rot_x_matrix = resize_rotation_matrix(rot_x_matrix, 4)
+    rot_x_matrix = resize_rotation_matrix(rot_x_matrix, features_number)
 
     rot_y_matrix = np.array([[cos(theta),0,sin(theta)],
                             [0,1,0],
                             [-sin(theta),0,cos(theta)]])
-    rot_y_matrix = resize_rotation_matrix(rot_y_matrix, 4)
+    rot_y_matrix = resize_rotation_matrix(rot_y_matrix, features_number)
 
     rot_z_matrix = np.array([[cos(theta),-sin(theta),0],
                             [sin(theta),cos(theta),0],
                             [0,0,1]])
-    rot_z_matrix = resize_rotation_matrix(rot_z_matrix, 4)
+    rot_z_matrix = resize_rotation_matrix(rot_z_matrix, features_number)
 
     translation_matrix = np.array([[1,0,0,1],
                                    [0,1,0,2],

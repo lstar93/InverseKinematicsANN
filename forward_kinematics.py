@@ -85,7 +85,7 @@ class ForwardKinematics:
         if self.robot_features_size == rot_mtx.shape[0]:
             return rot_axis
         identity_of_size = np.identity(self.robot_features_size)
-        identity_of_size[0:self.robot_features_size-1, 0:self.robot_features_size-1] = rot_mtx
+        identity_of_size[0:rot_mtx.shape[0], 0:rot_mtx.shape[0]] = rot_mtx
         return identity_of_size
 
     # translation -> move axis by vector 
