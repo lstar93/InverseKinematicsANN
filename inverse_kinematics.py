@@ -1,5 +1,46 @@
 #!/bin/python3
 
+# DH notation
+
+'''       
+      2y |          | 3y
+         |     l3   |
+         0-->-------0--> 3x
+        /  2x        \
+   y1| / l2        l4 \ |4y
+     |/                \|
+  1z 0-->1x          4z 0-->4x 
+     |                 ----
+     | l1              |  |
+    /_\
+    \ /
+     |
+_____|_____
+  i  |  ai  |  Li  |  Ei  |  Oi  |
+----------------------------------
+  1  |   0  | pi/2 |  l1  |  O1  |
+----------------------------------
+  2  |  l2  |  0   |   0  |  O2  |
+----------------------------------
+  3  |  l3  |  0   |   0  |  O3  |
+----------------------------------
+  4  |  l4  |  0   |   0  |  O4  |
+----------------------------------
+Rotation matrixes:
+Rt(x, L):
+    [[1,         0,       0   ]
+     [0,       cos(L), -sin(L)]
+     [0,       sin(L),  cos(L)]]
+Rt(y, B):
+    [[cos(B),    0,     sin(B)]
+     [0,         1,       0   ]
+     [-sin(B),   0,     cos(B)]]
+Rt(z, G):
+    [[cos(G), -sin(G),    0   ]
+     [sin(G),  cos(G),    0   ]
+     [0,         0,       1   ]]
+'''
+
 from enum import Enum
 from keras.models import load_model
 from datetime import datetime
@@ -41,18 +82,19 @@ class Point:
     def to_list(self):
         return [self.x, self.y, self.z]
 
-def distance_between_points(point_a, point_b):
+# calculate distance between two points
+def get_distance_between(point_a, point_b):
     return sqrt(pow((point_a.x - point_b.x), 2) + pow((point_a.y - point_b.y), 2) + pow((point_a.z - point_b.z), 2))
 
-def get_point_between_points(start_point, end_point, distance):
-    rx = start_point.x + ((distance/distance_between_points(start_point, end_point))*(end_point.x - start_point.x))
-    ry = start_point.y + ((distance/distance_between_points(start_point, end_point))*(end_point.y - start_point.y))
-    rz = start_point.z + ((distance/distance_between_points(start_point, end_point))*(end_point.z - start_point.z))
+# calculate coordinates of Point between two other points or coordinates of point in given distance from other point
+def get_point_between(start_point, end_point, distance):
+    coord_lambda = lambda start_point_axis, end_point_axis: start_point_axis + ((distance/get_distance_between(start_point, end_point))*(end_point_axis - start_point_axis))
+    rx = coord_lambda(start_point.x, end_point.x)
+    ry = coord_lambda(start_point.y, end_point.y)
+    rz = coord_lambda(start_point.z, end_point.z)
     return Point([rx, ry, rz])
 
 # FABRIK stands from forward and backward reaching inverse kinematics -> https://www.youtube.com/watch?v=UNoX65PRehA&feature=emb_title
-# TODO: add angles limits
-
 class Fabrik:
 
     def __init__(self, init_joints_positions, joint_distances, err_margin = 0.001, max_iter_num = 100):
@@ -69,7 +111,7 @@ class Fabrik:
         positions = list(reversed(points[:-1]))
         distances = list(reversed(self.joint_distances[:-1]))
         for next_point, distance in zip(positions, distances):
-            points_to_ret.append(get_point_between_points(points_to_ret[-1], next_point, distance))
+            points_to_ret.append(get_point_between(points_to_ret[-1], next_point, distance))
         return list(reversed(points_to_ret))
 
     # Compute forward iteration
@@ -80,7 +122,7 @@ class Fabrik:
         positions = points[1:]
         distances = self.joint_distances[1:]
         for next_point, distance in zip(positions, distances):
-            points_to_ret.append(get_point_between_points(points_to_ret[-1], next_point, distance))
+            points_to_ret.append(get_point_between(points_to_ret[-1], next_point, distance))
         return points_to_ret
 
     def compute_goal_joints_positions(self, goal_eff_pos):
@@ -97,9 +139,9 @@ class Fabrik:
 
         while (((start_error > self.err_margin) or (goal_error > self.err_margin)) and (self.max_iter_num > iter_cnt)):
             retb = self.backward(current_join_positions, goal_point)
-            start_error = distance_between_points(retb[0], start_point)
+            start_error = get_distance_between(retb[0], start_point)
             retf = self.forward(retb, start_point)
-            goal_error = distance_between_points(retf[-1], goal_point)
+            goal_error = get_distance_between(retf[-1], goal_point)
             current_join_positions = retf
             goal_joints_positions = current_join_positions
             PRINT_MSG('Iteration {} -> start position error = {}, goal position error = {}'.format(iter_cnt, start_error, goal_error))
@@ -142,6 +184,7 @@ class ANN:
 
         return np.array(input_scaled), np.array(output_scaled), np.array(input_test_scaled), np.array(output_test_scaled)
 
+    # mse custom loss function
     def customloss(self, yTrue, yPred, no_of_samples):
         return (keras.backend.sum((yTrue - yPred)**2))/no_of_samples
 
@@ -165,10 +208,9 @@ class ANN:
         self.model.fit(data_in, data_out, validation_data=(data_test_in, data_test_out), epochs=epochs) # callbacks = [model_check]
 
     def predict_ik(self, position):
-        arraynp = np.array(position)
-        position_scaled = self.data_skaler.fit_transform(arraynp)
+        position_scaled = self.data_skaler.fit_transform(np.array(position))
         predictions = self.model.predict(position_scaled)
-        # self.out_data_skaler.inverse_transform(predictions)
+        # self.out_data_skaler.inverse_transform(predictions) ???
         return predictions
 
     def load_model(self, model_h5):
@@ -189,7 +231,7 @@ class InverseKinematics:
         self.dh_matrix = dh_matrix
         self.joints_lengths = joints_lengths
         self.workspace_limits = workspace_limits
-        self.first_rev_joint_point = Point([0, 0, dh_matrix[1][0]]) # take first joint vertical length
+        # self.first_rev_joint_point = Point([0,0,dh_matrix[0]])
 
     # Compute angles from cosine theorem
     # IMPORTANT: function works only for RoboArm manipulator and FABRIK method!
@@ -202,14 +244,14 @@ class InverseKinematics:
 
         base = [A, B]
 
-        AB = distance_between_points(A, B)
-        BC = distance_between_points(B, C)
-        CD = distance_between_points(C, D)
-        DE = distance_between_points(D, E)
+        AB = get_distance_between(A, B)
+        BC = get_distance_between(B, C)
+        CD = get_distance_between(C, D)
+        DE = get_distance_between(D, E)
 
         # first triangle
         first_triangle = [A, C]
-        AC = distance_between_points(A, C)
+        AC = get_distance_between(A, C)
         if C.x >= 0:
             theta_2 = (pi/2 - acos((pow(AB,2) + pow(BC,2) - pow(AC,2)) / (2 * AB * BC))) * -1
         else:
@@ -217,14 +259,14 @@ class InverseKinematics:
 
         # second triangle
         second_triangle = [B, D]
-        BD = distance_between_points(B, D)
+        BD = get_distance_between(B, D)
         theta_3 = (pi - acos((pow(BC,2) + pow(CD,2) - pow(BD,2)) / (2 * BC * CD))) * -1
         if D.x < 0:
             theta_3 = theta_3 * -1
 
         # third triangle
         third_triangle = [C, E]
-        CE = distance_between_points(C, E)
+        CE = get_distance_between(C, E)
         theta_4 = (pi - acos((pow(CD,2) + pow(DE,2) - pow(CE,2)) / (2 * CD * DE))) * -1
         if E.x < 0:
             theta_4 = theta_4 * -1
@@ -242,12 +284,12 @@ class InverseKinematics:
         if any(dp < limitv[1][0] or dp > limitv[1][1] for dp, limitv in zip(dest_point, self.workspace_limits.items())):
             raise Exception("Point is out of RoboArm reach area! Limits: {}, ".format(self.workspace_limits))
 
-        effector_reach_limit = self.workspace_limits['x_limits'][1]
-
+        # TODO: check how it can be handled differently
+        # effector_reach_limit = self.workspace_limits['x_limits'][1]
         # Roboarm reach distance check
         # TODO: remove this and assume that first joint can move vertically!!!
-        if distance_between_points(self.first_rev_joint_point, Point(dest_point)) > effector_reach_limit: 
-            raise Exception("Point is out of RoboArm reach area! Reach limit is {}, but the distance to point is {}".format(effector_reach_limit, distance_between_points(self.first_rev_joint_point, Point(dest_point))))
+        # if get_distance_between(self.first_rev_joint_point, Point(dest_point)) > effector_reach_limit: 
+        #    raise Exception("Point is out of RoboArm reach area! Reach limit is {}, but the distance to point is {}".format(effector_reach_limit, get_distance_between(self.first_rev_joint_point, Point(dest_point))))
 
         if method.lower() == "fabrik":
             # FABRIK 

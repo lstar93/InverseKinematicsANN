@@ -88,13 +88,14 @@ class ForwardKinematics:
         identity_of_size[0:rot_mtx.shape[0], 0:rot_mtx.shape[0]] = rot_mtx
         return identity_of_size
 
-    # translation -> move axis by vector 
+    # translation -> move axis by [x,y,z] vector 
     # vect = translation vector
     def translation_matrix(self, vect, axis='', angle=0):
-        # rtm -> rotation matrix, 4x4 identity matrix if no angle given
+        # rtm -> rotation matrix, 4x4 identity matrix if no angle given to just move matrix in 3D space
         rtm = np.identity(self.robot_features_size) if not axis else self.rotation_matrix(axis, angle)
+        # repalce first 3 elems of matrix last column with translated vector x to move matrix by [x,y,z] vector in 3D space
         for x in range(len(vect)):
-            rtm[x,len(vect)] = vect[x] # repalce first 3 elems of matrix last column with translated vector x
+            rtm[x,len(vect)] = vect[x] 
         return rtm
 
     # DH_i-1_i = Rt(Z, Oi) * Tr([0, 0, Ei]^T) * Tr([ai, 0, 0]^T) * Rt(X, Li)
@@ -114,7 +115,7 @@ class ForwardKinematics:
         self.robot_features_size = len(thetas) # set size of operation matrixes
         fw_kine_matrix = [self.transformation_matrix(thetas[0], epsilons[0], ais[0], alphas[0])] # init result with first transformation matrix
 
-        # multiply transformation matrix one by one
+        # multiply transformation matrixes one by one
         for elem in range(len(thetas) - 1):
             next_matrix = fw_kine_matrix[elem].dot(self.transformation_matrix(thetas[elem+1], epsilons[elem+1], ais[elem+1], alphas[elem+1]))
             fw_kine_matrix.append(next_matrix)

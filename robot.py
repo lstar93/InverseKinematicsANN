@@ -83,9 +83,9 @@ if __name__ == '__main__':
         ann = ANN(joints_angles_limits, effector_workspace_limits, dh_matrix)
 
         limits = {'x_limits': [1,4], 'y_limits': [-4,4], 'z_limits': [0,4]} # assumed limits
-        # positions_samples = generator.random(no_of_samples = 300, limits = limits, distribution='random')
+        positions_samples = generator.random(no_of_samples = 300, limits = limits, distribution='random')
         # positions_samples = generator.cube(step_size = 5, limits = limits)
-        # angles_features = compute_angles(positions_samples, ikine)
+        angles_features = compute_angles(positions_samples, ikine)
 
         # model test trajectory datasets
         circle_samples_test = generator.circle(radius = 1, no_of_samples = 20, position = [1,3,1])

@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 from math import sin, cos, pi
-from robot import ForwardKinematics, Point, InverseKinematics, distance_between_points, get_point_between_points
+from robot import ForwardKinematics, Point, InverseKinematics, get_distance_between, get_point_between
 
 def resize_rotation_matrix(original_rotation, size):
     if size != original_rotation.shape[0]:
@@ -111,12 +111,12 @@ class forward_kinematics_unittests(unittest.TestCase):
     def test_point(self):
         p0 = Point([3,3,3])
         p1 = Point([4,6,4])
-        pdist = distance_between_points(p0, p1)
+        pdist = get_distance_between(p0, p1)
         np.testing.assert_almost_equal(pdist, 3.3166247903554) # check first to second distance
-        pdist1 = distance_between_points(p1, p0)
+        pdist1 = get_distance_between(p1, p0)
         np.testing.assert_almost_equal(pdist1, 3.3166247903554) # check second to first distance
         np.testing.assert_almost_equal(pdist1, pdist) # check both computed distances
-        p2 = get_point_between_points(p0, p1, 3) # check slightly less distance point position distance_between_points(p0, p1)
+        p2 = get_point_between(p0, p1, 3) # check slightly less distance point position get_distance_between(p0, p1)
         np.testing.assert_array_almost_equal(np.array([p2.x, p2.y, p2.z]), np.array([3.9045340337332908, 5.713602101199873, 3.9045340337332908]))
 
     def test_fabrik(self):
