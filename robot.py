@@ -41,6 +41,13 @@ Rt(z, G):
      [0,         0,       1   ]]
 '''
 
+'''
+TODO:
+1. read robot configuration (with angle limits) from file
+2. simple CLI to choose/save model and data generator
+3. add CSV positions handling via CLI
+'''
+
 from position_generator import *
 from forward_kinematics import *
 from inverse_kinematics import *
