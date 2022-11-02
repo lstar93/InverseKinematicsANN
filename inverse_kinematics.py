@@ -125,7 +125,8 @@ class Fabrik:
             points_to_ret.append(get_point_between(points_to_ret[-1], next_point, distance))
         return points_to_ret
 
-    def compute_goal_joints_positions(self, goal_eff_pos):
+    # with only effector position given compute all other joints positions
+    def all_joints_positions(self, goal_eff_pos):
         if not all(x == len(self.init_joints_positions) for x in (len(self.init_joints_positions), len(self.joint_distances))):
             raise Exception('Input vectors should have equal lengths!')
 
@@ -303,7 +304,7 @@ class InverseKinematics:
 
             # Compute joint positions using FABRIK
             fab = Fabrik(init_joints_positions, self.joints_lengths, max_err, max_iterations_num)
-            goal_joints_positions = fab.compute_goal_joints_positions(dest_point)
+            goal_joints_positions = fab.all_joints_positions(dest_point)
 
             # Compute roboarm angles from FABRIK computed positions
             ik_angles, joints_triangles = self.fabrik_ik(goal_joints_positions)
