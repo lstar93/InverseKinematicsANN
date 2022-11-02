@@ -68,10 +68,9 @@ if __name__ == '__main__':
     # workspace and joint angles limits
     joints_angles_limits = {'theta_1': [-pi/2,pi/2], 'theta_2': [-pi/4,pi/2], 'theta_3': [-pi/2,pi/2], 'theta_4': [-pi/2,pi/2]} # assumed joints angles limits
     effector_workspace_limits = {'x_limits': [1,6], 'y_limits': [-6,6], 'z_limits': [0,6]} # assumed limits
-    first_rev_joint_point = Point([0,0,2]) # first revolute joint, from this point reach limit will be computed
 
     # inverse kinematics engine
-    ikine = InverseKinematics(dh_matrix, links_lengths, effector_workspace_limits, first_rev_joint_point)
+    ikine = InverseKinematics(dh_matrix, links_lengths, effector_workspace_limits)
 
     # forward kinematics
     fkine = ForwardKinematics()

@@ -1,46 +1,5 @@
 #!/bin/python3
 
-# DH notation
-
-'''       
-      2y |          | 3y
-         |     l3   |
-         0-->-------0--> 3x
-        /  2x        \
-   y1| / l2        l4 \ |4y
-     |/                \|
-  1z 0-->1x          4z 0-->4x 
-     |                 ----
-     | l1              |  |
-    /_\
-    \ /
-     |
-_____|_____
-  i  |  ai  |  Li  |  Ei  |  Oi  |
-----------------------------------
-  1  |   0  | pi/2 |  l1  |  O1  |
-----------------------------------
-  2  |  l2  |  0   |   0  |  O2  |
-----------------------------------
-  3  |  l3  |  0   |   0  |  O3  |
-----------------------------------
-  4  |  l4  |  0   |   0  |  O4  |
-----------------------------------
-Rotation matrixes:
-Rt(x, L):
-    [[1,         0,       0   ]
-     [0,       cos(L), -sin(L)]
-     [0,       sin(L),  cos(L)]]
-Rt(y, B):
-    [[cos(B),    0,     sin(B)]
-     [0,         1,       0   ]
-     [-sin(B),   0,     cos(B)]]
-Rt(z, G):
-    [[cos(G), -sin(G),    0   ]
-     [sin(G),  cos(G),    0   ]
-     [0,         0,       1   ]]
-'''
-
 from enum import Enum
 from keras.models import load_model
 from datetime import datetime
@@ -226,11 +185,11 @@ class ANN:
 # Robo Arm inverse kinematics class
 class InverseKinematics:
 
-    def __init__(self, dh_matrix, joints_lengths, workspace_limits, first_rev_joint_point):
+    def __init__(self, dh_matrix, joints_lengths, workspace_limits):
         self.dh_matrix = dh_matrix
         self.joints_lengths = joints_lengths
         self.workspace_limits = workspace_limits
-        self.first_rev_joint_point = dh_matrix[1][0] # take first joint length
+        self.first_rev_joint_point = Point([0, 0, dh_matrix[1][0]]) # take first joint vertical length
 
     # Compute angles from cosine theorem
     # IMPORTANT: function works only for RoboArm manipulator and FABRIK method!
