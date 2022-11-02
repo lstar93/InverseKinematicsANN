@@ -81,32 +81,35 @@ if __name__ == '__main__':
     generator = RoboarmPositionsGenerator()
 
     try:
+        ann = ANN(joints_angles_limits, effector_workspace_limits, dh_matrix)
+
         limits = {'x_limits': [1,4], 'y_limits': [-4,4], 'z_limits': [0,4]} # assumed limits
-        positions_samples = generator.random(no_of_samples = 10, limits = limits, distribution='random')
+        # positions_samples = generator.random(no_of_samples = 300, limits = limits, distribution='random')
         # positions_samples = generator.cube(step_size = 5, limits = limits)
-        angles_features = compute_angles(positions_samples, ikine)
+        # angles_features = compute_angles(positions_samples, ikine)
 
         # model test trajectory datasets
         circle_samples_test = generator.circle(radius = 1, no_of_samples = 20, position = [1,3,1])
-        cube_samples_test = generator.cube(step_size = 5, limits = limits)
+        cube_samples_test = generator.cube(step_size = 2, limits = limits)
 
+        # print/plot learn points dataset
         # plot_points_cloud([Point([*elem]) for elem in positions_samples])
-        ann = ANN(joints_angles_limits, effector_workspace_limits, dh_matrix)
 
-        epochs=2000
-        ann.train_model(epochs, positions_samples, angles_features) # random data
+        # epochs=2000
+        # ann.train_model(epochs, positions_samples, angles_features) # random data
 
         # from keras.models import load_model
-        # ann.load_model('roboarm_model_1664488076-610064.h5')
+        ann.load_model('roboarm_model_1664488076-610064.h5')
+
+        # print/plot test points dataset
+        test_points = [Point([*elem]) for elem in cube_samples_test]
+        plot_points_cloud(test_points)
+        print('sample: ' + str(np.array(cube_samples_test)))
 
         # ANN
         print("ANN")
         predicted_points = []
         ik_angles_ann = ann.predict_ik(cube_samples_test).tolist()
-
-        # print/plot test points
-        plot_points_cloud([Point([*elem]) for elem in cube_samples_test])
-        print('sample: ' + str(np.array(cube_samples_test)))
 
         # compute FK to check ANN IK
         for angles in ik_angles_ann:
@@ -117,6 +120,8 @@ if __name__ == '__main__':
         # print/plot predicted points
         plot_points_cloud(predicted_points)
         print('predicted: ' + str(np.array(predicted_points)))
+
+        print(np.array(cube_samples_test) - np.array(predicted_points))
 
         # ann.save_model()
 

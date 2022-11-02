@@ -41,6 +41,7 @@ Rt(z, G):
      [0,         0,       1   ]]
 '''
 
+from enum import Enum
 from keras.models import load_model
 from datetime import datetime
 import numpy as np
@@ -57,8 +58,8 @@ np.set_printoptions(suppress=True)
 
 # Keep some prints, but show them only if necessary
 VERBOSE = False
-def PRINT_MSG(msg, v=VERBOSE):
-    if(v):
+def PRINT_MSG(msg, verbose=VERBOSE):
+    if verbose:
         print(msg)
 
 def pow(arg, p):
@@ -72,15 +73,6 @@ class Point:
     def __init__(self, xyz):
         self.x, self.y, self.z = xyz
 
-    def distance_to_point(self, p):
-        return sqrt(pow((self.x - p.x), 2) + pow((self.y - p.y), 2) + pow((self.z - p.z), 2))
-
-    def get_point_between(self, end_point, distance):
-        rx = self.x + ((distance/self.distance_to_point(end_point))*(end_point.x - self.x))
-        ry = self.y + ((distance/self.distance_to_point(end_point))*(end_point.y - self.y))
-        rz = self.z + ((distance/self.distance_to_point(end_point))*(end_point.z - self.z))
-        return Point([rx, ry, rz])
-
     def __str__(self):
         return str([self.x, self.y, self.z])
 
@@ -93,14 +85,16 @@ class Point:
 def distance_between_points(point_a, point_b):
     return sqrt(pow((point_a.x - point_b.x), 2) + pow((point_a.y - point_b.y), 2) + pow((point_a.z - point_b.z), 2))
 
+def get_point_between_points(start_point, end_point, distance):
+    rx = start_point.x + ((distance/distance_between_points(start_point, end_point))*(end_point.x - start_point.x))
+    ry = start_point.y + ((distance/distance_between_points(start_point, end_point))*(end_point.y - start_point.y))
+    rz = start_point.z + ((distance/distance_between_points(start_point, end_point))*(end_point.z - start_point.z))
+    return Point([rx, ry, rz])
+
 # FABRIK stands from forward and backward reaching inverse kinematics -> https://www.youtube.com/watch?v=UNoX65PRehA&feature=emb_title
 # TODO: add angles limits
-class Fabrik:
 
-    init_joints_positions = []
-    joint_distances = []
-    err_margin = 0.0
-    max_iter_num = 0
+class Fabrik:
 
     def __init__(self, init_joints_positions, joint_distances, err_margin = 0.001, max_iter_num = 100):
         self.joint_distances = joint_distances
@@ -115,9 +109,8 @@ class Fabrik:
         points_to_ret = [goal_point] # goal point should be the last point in array
         positions = list(reversed(points[:-1]))
         distances = list(reversed(self.joint_distances[:-1]))
-        for p, d in zip(positions, distances):
-            points_to_ret.append(goal_point.get_point_between(p, d))
-            goal_point = points_to_ret[-1] # next element is last computed element
+        for next_point, distance in zip(positions, distances):
+            points_to_ret.append(get_point_between_points(points_to_ret[-1], next_point, distance))
         return list(reversed(points_to_ret))
 
     # Compute forward iteration
@@ -127,12 +120,11 @@ class Fabrik:
         points_to_ret = [start_point] # start point should be the first point in array
         positions = points[1:]
         distances = self.joint_distances[1:]
-        for p, d in zip(positions, distances):
-            points_to_ret.append(start_point.get_point_between(p, d))
-            start_point = points_to_ret[-1] # next element is last computed element
+        for next_point, distance in zip(positions, distances):
+            points_to_ret.append(get_point_between_points(points_to_ret[-1], next_point, distance))
         return points_to_ret
 
-    def compute_goal_joints_positions(self, goal_eff_pos, verbose=False):
+    def compute_goal_joints_positions(self, goal_eff_pos):
         if not all(x == len(self.init_joints_positions) for x in (len(self.init_joints_positions), len(self.joint_distances))):
             raise Exception('Input vectors should have equal lengths!')
 
@@ -146,12 +138,12 @@ class Fabrik:
 
         while (((start_error > self.err_margin) or (goal_error > self.err_margin)) and (self.max_iter_num > iter_cnt)):
             retb = self.backward(current_join_positions, goal_point)
-            start_error = retb[0].distance_to_point(start_point)
+            start_error = distance_between_points(retb[0], start_point)
             retf = self.forward(retb, start_point)
-            goal_error = retf[-1].distance_to_point(goal_point)
+            goal_error = distance_between_points(retf[-1], goal_point)
             current_join_positions = retf
             goal_joints_positions = current_join_positions
-            PRINT_MSG('Iteration {} -> start position error = {}, goal position error = {}'.format(iter_cnt, start_error, goal_error), verbose)
+            PRINT_MSG('Iteration {} -> start position error = {}, goal position error = {}'.format(iter_cnt, start_error, goal_error))
             iter_cnt += 1
 
         # if verbose and not len(goal_joints_positions) == 0:
@@ -234,65 +226,59 @@ class ANN:
 # Robo Arm inverse kinematics class
 class InverseKinematics:
 
-    fkine = ForwardKinematics()
-    dh_matrix = []
-    joints_lengths = []
-    workspace_limits = []
-    first_rev_joint_point = []
-
     def __init__(self, dh_matrix, joints_lengths, workspace_limits, first_rev_joint_point):
         self.dh_matrix = dh_matrix
         self.joints_lengths = joints_lengths
         self.workspace_limits = workspace_limits
-        self.first_rev_joint_point = first_rev_joint_point
+        self.first_rev_joint_point = dh_matrix[1][0] # take first joint length
 
     # Compute angles from cosine theorem
     # IMPORTANT: function works only for RoboArm manipulator and FABRIK method!
-    def fabrik_ik(self, gp, verbose=False):
+    def fabrik_ik(self, goal_point):
         A = Point([0, 0, 0])
-        B = Point([gp[0].x, gp[0].y, gp[0].z])
-        C = Point([gp[1].x, gp[1].y, gp[1].z])
-        D = Point([gp[2].x, gp[2].y, gp[2].z])
-        E = Point([gp[3].x, gp[3].y, gp[3].z])
+        B = Point([goal_point[0].x, goal_point[0].y, goal_point[0].z])
+        C = Point([goal_point[1].x, goal_point[1].y, goal_point[1].z])
+        D = Point([goal_point[2].x, goal_point[2].y, goal_point[2].z])
+        E = Point([goal_point[3].x, goal_point[3].y, goal_point[3].z])
 
         base = [A, B]
 
-        AB = A.distance_to_point(B)
-        BC = B.distance_to_point(C)
-        CD = C.distance_to_point(D)
-        DE = D.distance_to_point(E)
+        AB = distance_between_points(A, B)
+        BC = distance_between_points(B, C)
+        CD = distance_between_points(C, D)
+        DE = distance_between_points(D, E)
 
         # first triangle
-        ftr = [A, C]
-        AC = A.distance_to_point(C)
+        first_triangle = [A, C]
+        AC = distance_between_points(A, C)
         if C.x >= 0:
             theta_2 = (pi/2 - acos((pow(AB,2) + pow(BC,2) - pow(AC,2)) / (2 * AB * BC))) * -1
         else:
             theta_2 = (pi + pi/2 - acos((pow(AB,2) + pow(BC,2) - pow(AC,2)) / (2 * AB * BC)))
 
         # second triangle
-        sectr = [B, D]
-        BD = B.distance_to_point(D)
+        second_triangle = [B, D]
+        BD = distance_between_points(B, D)
         theta_3 = (pi - acos((pow(BC,2) + pow(CD,2) - pow(BD,2)) / (2 * BC * CD))) * -1
         if D.x < 0:
             theta_3 = theta_3 * -1
 
         # third triangle
-        thrdtr = [C, E]
-        CE = C.distance_to_point(E)
+        third_triangle = [C, E]
+        CE = distance_between_points(C, E)
         theta_4 = (pi - acos((pow(CD,2) + pow(DE,2) - pow(CE,2)) / (2 * CD * DE))) * -1
         if E.x < 0:
             theta_4 = theta_4 * -1
 
-        theta_1 = float(atan2(gp[3].y, gp[3].x))
+        theta_1 = float(atan2(goal_point[3].y, goal_point[3].x))
 
-        return [theta_1, theta_2, theta_3, theta_4], [base, ftr, sectr, thrdtr]
+        return [theta_1, theta_2, theta_3, theta_4], [base, first_triangle, second_triangle, third_triangle]
 
-    def ann_ik(self, gp, verbose=False):
+    def ann_ik(self, gp):
         pass
 
     # use one of methods to compute inverse kinematics
-    def compute_roboarm_ik(self, method, dest_point, max_err = 0.001, max_iterations_num = 100, verbose = False):
+    def compute_roboarm_ik(self, method, dest_point, max_err = 0.001, max_iterations_num = 100):
         # Some basic limits check
         if any(dp < limitv[1][0] or dp > limitv[1][1] for dp, limitv in zip(dest_point, self.workspace_limits.items())):
             raise Exception("Point is out of RoboArm reach area! Limits: {}, ".format(self.workspace_limits))
@@ -301,8 +287,8 @@ class InverseKinematics:
 
         # Roboarm reach distance check
         # TODO: remove this and assume that first joint can move vertically!!!
-        if self.first_rev_joint_point.distance_to_point(Point(dest_point)) > effector_reach_limit:
-            raise Exception("Point is out of RoboArm reach area! Reach limit is {}, but the distance to point is {}".format(effector_reach_limit, self.first_rev_joint_point.distance_to_point(Point(dest_point))))
+        if distance_between_points(self.first_rev_joint_point, Point(dest_point)) > effector_reach_limit: 
+            raise Exception("Point is out of RoboArm reach area! Reach limit is {}, but the distance to point is {}".format(effector_reach_limit, distance_between_points(self.first_rev_joint_point, Point(dest_point))))
 
         if method.lower() == "fabrik":
             # FABRIK 
@@ -310,19 +296,16 @@ class InverseKinematics:
             self.dh_matrix[0][0] = theta_1 # replace initial theta_1
 
             # Compute initial xyz possition of every robot joint
-            _, fk_all = self.fkine.forward_kinematics(*self.dh_matrix)
+            fkine = ForwardKinematics()
+            _, fk_all = fkine.forward_kinematics(*self.dh_matrix)
             init_joints_positions = [Point([x[0][3], x[1][3], x[2][3]]) for x in fk_all]
-            PRINT_MSG('Initial joints positions:    ' + str(init_joints_positions))
-
-            PRINT_MSG('Dest joints positions:    ' + str(dest_point))
 
             # Compute joint positions using FABRIK
             fab = Fabrik(init_joints_positions, self.joints_lengths, max_err, max_iterations_num)
-            goal_joints_positions = fab.compute_goal_joints_positions(dest_point, VERBOSE)
-            PRINT_MSG('Goal joints positions:    ' + str(goal_joints_positions))
+            goal_joints_positions = fab.compute_goal_joints_positions(dest_point)
 
             # Compute roboarm angles from FABRIK computed positions
-            ik_angles, joints_triangles = self.fabrik_ik(goal_joints_positions, verbose)
+            ik_angles, joints_triangles = self.fabrik_ik(goal_joints_positions)
             
             # print robot arm
             # if verbose:
