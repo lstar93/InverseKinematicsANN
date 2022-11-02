@@ -94,7 +94,7 @@ class ForwardKinematics:
         # rtm -> rotation matrix, 4x4 identity matrix if no angle given
         rtm = np.identity(self.robot_features_size) if not axis else self.rotation_matrix(axis, angle)
         for x in range(len(vect)):
-            rtm[x,3] = vect[x] # repalce first 3 elems of matrix last column with translated vector x
+            rtm[x,len(vect)] = vect[x] # repalce first 3 elems of matrix last column with translated vector x
         return rtm
 
     # DH_i-1_i = Rt(Z, Oi) * Tr([0, 0, Ei]^T) * Tr([ai, 0, 0]^T) * Rt(X, Li)
