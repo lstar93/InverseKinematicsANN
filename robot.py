@@ -96,7 +96,7 @@ if __name__ == '__main__':
 
         # model test trajectory datasets
         circle_samples_test = generator.circle(radius = 1, no_of_samples = 20, position = [1,3,1])
-        cube_samples_test = generator.cube(step_size = 2, limits = limits)
+        cube_samples_test = generator.cube(step_size = 3, limits = limits)
 
         # print/plot learn points dataset
         # plot_points_cloud([Point([*elem]) for elem in positions_samples])

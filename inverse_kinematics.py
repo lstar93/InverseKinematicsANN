@@ -41,7 +41,6 @@ Rt(z, G):
      [0,         0,       1   ]]
 '''
 
-from enum import Enum
 from keras.models import load_model
 from datetime import datetime
 import numpy as np
@@ -148,11 +147,6 @@ class Fabrik:
             PRINT_MSG('Iteration {} -> start position error = {}, goal position error = {}'.format(iter_cnt, start_error, goal_error))
             iter_cnt += 1
 
-        # if verbose and not len(goal_joints_positions) == 0:
-        #     base_point = Point([0, 0, 0])
-        #     base = [base_point, goal_joints_positions[0]]
-        #     plot_robot([base, self.init_joints_positions, goal_joints_positions], [base_point, goal_point, start_point])
-
         return goal_joints_positions
 
 # neural network IK approach
@@ -242,6 +236,7 @@ class InverseKinematics:
         C = Point([goal_point[1].x, goal_point[1].y, goal_point[1].z])
         D = Point([goal_point[2].x, goal_point[2].y, goal_point[2].z])
         E = Point([goal_point[3].x, goal_point[3].y, goal_point[3].z])
+        # todo: n-th point
 
         base = [A, B]
 
@@ -249,30 +244,53 @@ class InverseKinematics:
         BC = get_distance_between(B, C)
         CD = get_distance_between(C, D)
         DE = get_distance_between(D, E)
+        # todo: n-th distance
 
-        # first triangle
+        # theta_1 is horizontal angle and is calculated from arcus tangens 
+        # ensures that arm is faced into goal point direction
+        ''' view above robot
+        y
+        /\     
+        |        * gp(x,y)
+        |  
+        |    |__|
+        |     /
+        |    /
+        | _ /
+        |  /|
+        | / |
+        ----------------------> x
+        '''
+        theta_1 = float(atan2(goal_point[3].y, goal_point[3].x))
+
+        # theta_2/3/4 are vertical angles, they are responsible for 
+        # raching goal point vertically
+        # traingles are used just to plot arm later with matplotlib
+
+        # second theta
         first_triangle = [A, C]
         AC = get_distance_between(A, C)
         if C.x >= 0:
             theta_2 = (pi/2 - acos((pow(AB,2) + pow(BC,2) - pow(AC,2)) / (2 * AB * BC))) * -1
         else:
-            theta_2 = (pi + pi/2 - acos((pow(AB,2) + pow(BC,2) - pow(AC,2)) / (2 * AB * BC)))
+            theta_2 = (pi + pi/2 - acos((pow(AB,2) + pow(BC,2) - pow(AC,2)) / (2 * AB * BC))) # ?
 
-        # second triangle
+        # third theta
         second_triangle = [B, D]
         BD = get_distance_between(B, D)
         theta_3 = (pi - acos((pow(BC,2) + pow(CD,2) - pow(BD,2)) / (2 * BC * CD))) * -1
         if D.x < 0:
             theta_3 = theta_3 * -1
 
-        # third triangle
+        # fourth theta
         third_triangle = [C, E]
         CE = get_distance_between(C, E)
         theta_4 = (pi - acos((pow(CD,2) + pow(DE,2) - pow(CE,2)) / (2 * CD * DE))) * -1
         if E.x < 0:
             theta_4 = theta_4 * -1
 
-        theta_1 = float(atan2(goal_point[3].y, goal_point[3].x))
+        # todo: n-th triangle
+        # ...
 
         return [theta_1, theta_2, theta_3, theta_4], [base, first_triangle, second_triangle, third_triangle]
 
@@ -314,5 +332,8 @@ class InverseKinematics:
             #     plot_roboarm([*joints_triangles, init_joints_positions, goal_joints_positions], [init_joints_positions[0], goal_joints_positions[-1]])
         
             return ik_angles
+
+        elif method.lower() == "ann":
+            return None
         
         raise Exception('Unknown method!')
