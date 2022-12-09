@@ -151,11 +151,6 @@ class Fabrik:
 
 # neural network IK approach
 class ANN:
-    effector_workspace_limits = {}
-    angles_limits = {}
-    dh_matrix = []
-    model = None
-
     # data scalers
     data_skaler = sklearn.preprocessing.MinMaxScaler()
     # out_data_skaler = sklearn.preprocessing.MinMaxScaler()
@@ -248,7 +243,7 @@ class InverseKinematics:
 
         # theta_1 is horizontal angle and is calculated from arcus tangens 
         # ensures that arm is faced into goal point direction
-        ''' view above robot
+        ''' view from above
         y
         /\     
         |        * gp(x,y)
