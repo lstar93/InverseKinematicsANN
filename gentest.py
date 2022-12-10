@@ -1,10 +1,9 @@
 #!/bin/python3
 
-import random as rand
 import numpy as np
 from math import sin, cos
-from scipy.stats import truncnorm
 from plot import *
+from sklearn.preprocessing import minmax_scale
 
 # Generate learn data for ANN
 class RoboarmPositionsGenerator:
@@ -25,14 +24,14 @@ class RoboarmPositionsGenerator:
     @staticmethod
     def cube(step, len_x, len_y, len_z):
         points = np.array([[[ [x,y,z] for x in np.arange(0, len_x, step) ] for y in np.arange(0, len_y, step) ] for z in np.arange(0, len_z, step)])
-        return points.reshape(np.prod(points.shape[:3]), 3)
+        return points.reshape(np.prod(points.shape[:3]), 3).tolist()
 
     # Cube shaped point cloud using numpy random module
     @staticmethod
     def cube_random(step, len_x, len_y, len_z):
         rr = lambda x: x*np.random.rand() # resized rand
         points = np.array([[rr(len_x), rr(len_y), rr(len_z)] for _ in np.arange(0, len_x*len_y*len_z, step)])
-        return points.reshape(np.prod(points.shape[0]), 3)
+        return points.reshape(np.prod(points.shape[0]), 3).tolist()
 
     # Random Cube using python generator
     @staticmethod
@@ -40,36 +39,28 @@ class RoboarmPositionsGenerator:
         for _ in np.arange(0, len_x*len_y*len_z, step):
             yield [len_x*np.random.rand(), len_y*np.random.rand(), len_z*np.random.rand()]
 
-    # Random distribution
+    # Random normal distribution with scaler
     @staticmethod
-    def random(no_of_samples, limits, distribution = 'normal'):
-        # positions = [] # output samples -> angles
-        # for _, limitv in limits.items():
-        if distribution == 'normal':
-            mean = 0
-            sd = 0.5
-            return np.array([[truncnorm((limitv[0] - mean) / 0.5, (limitv[1] - mean) / sd, loc=mean, scale=sd)] for _, limitv in limits.items()]).T.tolist()
-        elif distribution == 'uniform':
-            # positions.append([rand.uniform(*limitv) for x in range(no_of_samples)])
-            return np.array([[rand.uniform(*limitv) for x in range(no_of_samples)] for _, limitv in limits.items()]).T.tolist()
-        elif distribution == 'random':
-            # just random shuffled data
-            # np.random.shuffle(np.linspace(limitv[0],limitv[1],no_of_samples))
-            # positions.append(arr)
-            return np.array([np.random.shuffle(np.linspace(limitv[0],limitv[1],no_of_samples)) for _, limitv in limits.items()]).T.tolist()
-        else:
-            raise Exception('Unknown distribution, use: \'normal\' (default), \'unifrom\', \'random\'')
+    def random(no_of_samples, limits=(0,1)):
+        return minmax_scale(np.random.randn(no_of_samples, 3), limits)
+
+    # Random normal distribution with scaler (generator)
+    # @staticmethod
+    # def random_gen(no_of_samples, limits=(0,1)):
+    #    for _ in range(no_of_samples):
+    #        yield minmax_scale(np.random.randn(3), limits).tolist()
 
 # circle
-radius = 5
-no_of_samples = 20
-centre = [1,3,1]
+# radius = 5
+# no_of_samples = 20
+# centre = [1,3,1]
 
 # cube
-step = 1
-cube = [5, 5, 5]
+# step = 1
+# cube = [5, 5, 5]
 
-# TODO: check round
+# random
+# no_of_samples_rand = 30
 
 # OK
 # circle = RoboarmPositionsGenerator.circle(radius, no_of_samples, centre)
@@ -95,3 +86,14 @@ cube = [5, 5, 5]
 # cubeg = [next(cube_gen) for _ in np.arange(0, np.prod(cube), step)]
 # print(cubeg)
 # plot_list_points_cloud(cubeg)
+
+# OK
+# randomn = RoboarmPositionsGenerator.random(no_of_samples_rand)
+# print(randomn)
+# plot_list_points_cloud(randomn)
+
+# NOK, TODO
+# random_gen = RoboarmPositionsGenerator.random_gen(no_of_samples_rand)
+# random_gen_arr = [next(random_gen) for _ in range(no_of_samples_rand)]
+# print(random_gen_arr)
+# plot_list_points_cloud(random_gen_arr)
