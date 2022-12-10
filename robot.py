@@ -72,55 +72,52 @@ if __name__ == '__main__':
 	fkine = ForwardKinematics()
 	ik_angles = [] # computed joints angles
 
-	try:
-		ann = ANN(effector_workspace_limits, dh_matrix)
+	#try:
+	### CREATE MODEL
 
-		no_of_samples = 1000
-		positions_samples = RoboarmPositionsGenerator.random(no_of_samples, limits=(1,4))
+	ann = ANN(effector_workspace_limits, dh_matrix)
 
-		# calculate joints angles using FABRIK algorithm
-		angles_features = [ikine.compute_roboarm_ik('FABRIK', pos) for pos in positions_samples]
+	# prepare training data
+	# no_of_samples = 10
+	positions_samples = RoboarmPositionsGenerator.cube_random(0.5, 5, 12, 6, (1,-6,0))
+	print(len(positions_samples))
+	print(np.array(positions_samples).shape)
 
-		# test trajectory data
-		cube_shape = [3, 3, 3]
-		cube_samples_test = RoboarmPositionsGenerator.cube(0.5, *cube_shape)
+	# calculate joints angles using FABRIK algorithm
+	angles_features = [ikine.compute_roboarm_ik('FABRIK', pos) for pos in positions_samples]
 
-		# plot training dataset
-		# plot_list_points_cloud(positions_samples)
-		print(len(positions_samples))
-		print(np.array(positions_samples).shape)
+	# train model using generated dataset
+	# ann.train_model(epochs=2000, positions_samples, angles_features) # random data
 
-		# train model using generated dataset
-		epochs=2000
-		ann.train_model(epochs, positions_samples, angles_features) # random data
+	# use existing model
+	ann.load_model('roboarm_model_1664488076-610064.h5')
 
-		# use existing model
-		# ann.load_model('roboarm_model_1664488076-610064.h5')
+	### TEST MODEL
 
-		# print/plot test points dataset
-		# test_points = [Point([*elem]) for elem in cube_samples_test]
-		# plot_points_cloud(test_points)
-		# print('sample: ' + str(np.array(cube_samples_test)))
+	# test trajectory data
+	cube_shape = [3, 3, 3]
+	cube_samples_test = RoboarmPositionsGenerator.random(50)
 
-		# predict positions on generated data
-		predicted_points = []
-		ik_angles_ann = ann.predict_ik(cube_samples_test).tolist()
+	plot_list_points_cloud(cube_samples_test)
 
-		# compute FK to check ANN IK
-		for angles in ik_angles_ann:
-			fk, _ = fkine.forward_kinematics(*[angles, dh_matrix[1:]])
-			predicted_points.append(fk.T)
+	# predict positions on generated data
+	predicted_points = []
+	ik_angles_ann = ann.predict_ik(cube_samples_test).tolist()
 
-		# print/plot predicted points
-		# plot_points_cloud(predicted_points)
-		print(len(predicted_points))
-		print(np.array(predicted_points).shape)
-		# print('predicted: ' + str(np.array(predicted_points)))
+	# compute FK to check ANN IK
+	for angles in ik_angles_ann:
+		fk, _ = fkine.forward_kinematics(*[angles, *dh_matrix[1:]])
+		predicted_points.append([fk[0,3], fk[1,3], fk[2,3]])
 
-		print(np.array(cube_samples_test) - np.array(predicted_points))
+	# print/plot predicted points
+	plot_list_points_cloud(predicted_points)
+	# print(len(predicted_points))
+	# print(np.array(predicted_points).shape)
+	# print('predicted: ' + str(predicted_points))
+	print(np.array(cube_samples_test) - np.array(predicted_points))
 
-		# save exceptional models
-		# ann.save_model()
+	# save exceptional models
+	# ann.save_model()
 
-	except Exception as e:
-		print(str(e))
+	# except Exception as e:
+	# 	print(str(e))

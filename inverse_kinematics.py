@@ -188,14 +188,14 @@ class ANN:
         self.model.add(keras.layers.Dense(units=720, activation='tanh')) # hidden layer 720 neurons
         self.model.add(keras.layers.Dense(units=4)) # theta1, theta2, theta3, theta4 -> output layer
 
+        # todo: add early stopping
+
         self.model.compile(optimizer = tf.keras.optimizers.Adam(learning_rate=1.0e-5), loss='mse')
         self.model.fit(data_in, data_out, validation_data=(data_test_in, data_test_out), epochs=epochs) # callbacks = [model_check]
 
     def predict_ik(self, position):
         position_scaled = self.data_skaler.fit_transform(np.array(position))
-        predictions = self.model.predict(position_scaled)
-        # self.out_data_skaler.inverse_transform(predictions) ???
-        return predictions
+        return  self.model.predict(position_scaled)
 
     def load_model(self, model_h5):
         self.model = load_model(model_h5)
@@ -255,25 +255,36 @@ class InverseKinematics:
         # raching goal point vertically
         # traingles are used just to plot arm later with matplotlib
 
+        # set rounding up to x decimal places to prevent math error
+        rounding_upto = 8
+
         # second theta
         first_triangle = [A, C]
         AC = get_distance_between(A, C)
+        nominator = (pow(AB,2) + pow(BC,2) - pow(AC,2))
+        denominator = (2 * AB * BC)
         if C.x >= 0:
-            theta_2 = (pi/2 - acos((pow(AB,2) + pow(BC,2) - pow(AC,2)) / (2 * AB * BC))) * -1
+            theta_2 = (pi/2 - acos(round(nominator / denominator, rounding_upto))) * -1
         else:
-            theta_2 = (pi + pi/2 - acos((pow(AB,2) + pow(BC,2) - pow(AC,2)) / (2 * AB * BC))) # ?
+            theta_2 = (pi + pi/2 - acos(round(nominator / denominator, rounding_upto))) # check?
 
         # third theta
         second_triangle = [B, D]
         BD = get_distance_between(B, D)
-        theta_3 = (pi - acos((pow(BC,2) + pow(CD,2) - pow(BD,2)) / (2 * BC * CD))) * -1
+
+        nominator = (pow(BC,2) + pow(CD,2) - pow(BD,2))
+        denominator = (2 * BC * CD)
+        theta_3 = (pi - acos(round(nominator / denominator, rounding_upto))) * -1
         if D.x < 0:
             theta_3 = theta_3 * -1
 
         # fourth theta
         third_triangle = [C, E]
         CE = get_distance_between(C, E)
-        theta_4 = (pi - acos((pow(CD,2) + pow(DE,2) - pow(CE,2)) / (2 * CD * DE))) * -1
+
+        nominator = (pow(CD,2) + pow(DE,2) - pow(CE,2))
+        denominator = (2 * CD * DE)
+        theta_4 = (pi - acos(round(nominator / denominator, rounding_upto))) * -1
         if E.x < 0:
             theta_4 = theta_4 * -1
 

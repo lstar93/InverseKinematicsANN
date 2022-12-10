@@ -22,22 +22,25 @@ class RoboarmPositionsGenerator:
 
     # Cube
     @staticmethod
-    def cube(step, len_x, len_y, len_z):
-        points = np.array([[[ [x,y,z] for x in np.arange(0, len_x, step) ] for y in np.arange(0, len_y, step) ] for z in np.arange(0, len_z, step)])
+    def cube(step, len_x, len_y, len_z, start=(0,0,0)):
+        points = np.array([[[ [x+start[0], y+start[1], z+start[2]] 
+                                for x in np.arange(0, len_x, step) ] 
+                                    for y in np.arange(0, len_y, step) ] 
+                                        for z in np.arange(0, len_z, step)])
         return points.reshape(np.prod(points.shape[:3]), 3).tolist()
 
     # Cube shaped point cloud using numpy random module
     @staticmethod
-    def cube_random(step, len_x, len_y, len_z):
+    def cube_random(step, len_x, len_y, len_z, start=(0,0,0)):
         rr = lambda x: x*np.random.rand() # resized rand
-        points = np.array([[rr(len_x), rr(len_y), rr(len_z)] for _ in np.arange(0, len_x*len_y*len_z, step)])
+        points = np.array([[rr(len_x)+start[0], rr(len_y)+start[1], rr(len_z)+start[2]] for _ in np.arange(0, len_x*len_y*len_z, step)])
         return points.reshape(np.prod(points.shape[0]), 3).tolist()
 
     # Random Cube using python generator
     @staticmethod
-    def cube_random_gen(step, len_x, len_y, len_z):
+    def cube_random_gen(step, len_x, len_y, len_z, start=(0,0,0)):
         for _ in np.arange(0, len_x*len_y*len_z, step):
-            yield [len_x*np.random.rand(), len_y*np.random.rand(), len_z*np.random.rand()]
+            yield [len_x*np.random.rand()+start[0], len_y*np.random.rand()+start[1], len_z*np.random.rand()+start[2]]
 
     # Random normal distribution with scaler
     @staticmethod
@@ -48,4 +51,4 @@ class RoboarmPositionsGenerator:
     # @staticmethod
     # def random_gen(no_of_samples, limits=(0,1)):
     #    for _ in range(no_of_samples):
-    #        yield minmax_scale(np.random.randn(3), limits).tolist()
+    #        yield minmax_scale(np.random.randn(3), limits).tolist()\
