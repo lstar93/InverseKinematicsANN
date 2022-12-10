@@ -124,41 +124,37 @@ class Fabrik:
             points_to_ret.append(get_point_between(points_to_ret[-1], next_point, distance))
         return points_to_ret
 
-    # with only effector position given compute all other joints positions
-    def all_joints_positions(self, goal_eff_pos):
+    # compute all joints positions joining backward and forward methods
+    def compute(self, goal_eff_pos):
         if not all(x == len(self.init_joints_positions) for x in (len(self.init_joints_positions), len(self.joint_distances))):
             raise Exception('Input vectors should have equal lengths!')
 
         current_join_positions = self.init_joints_positions
-        goal_joints_positions = []
+        # goal_joints_positions = []
         start_point = self.init_joints_positions[0]
         goal_point = Point([x for x in goal_eff_pos])
         start_error = 1
         goal_error = 1
-        iter_cnt = 0
+        step = 0
 
-        while (((start_error > self.err_margin) or (goal_error > self.err_margin)) and (self.max_iter_num > iter_cnt)):
-            retb = self.backward(current_join_positions, goal_point)
-            start_error = get_distance_between(retb[0], start_point)
-            retf = self.forward(retb, start_point)
-            goal_error = get_distance_between(retf[-1], goal_point)
-            current_join_positions = retf
-            goal_joints_positions = current_join_positions
-            PRINT_MSG('Iteration {} -> start position error = {}, goal position error = {}'.format(iter_cnt, start_error, goal_error))
-            iter_cnt += 1
+        while (((start_error > self.err_margin) or (goal_error > self.err_margin)) and (self.max_iter_num > step)):
+            backward = self.backward(current_join_positions, goal_point)
+            start_error = get_distance_between(backward[0], start_point)
+            forward = self.forward(backward, start_point)
+            goal_error = get_distance_between(forward[-1], goal_point)
+            current_join_positions = forward
+            # goal_joints_positions = current_join_positions
+            PRINT_MSG('Iteration {} -> start position error = {}, goal position error = {}'.format(step, start_error, goal_error))
+            step += 1
 
-        return goal_joints_positions
+        return current_join_positions
 
 # neural network IK approach
 class ANN:
-    # data scalers
-    data_skaler = sklearn.preprocessing.MinMaxScaler()
-    # out_data_skaler = sklearn.preprocessing.MinMaxScaler()
-
-    def __init__(self, angles_limits, effector_workspace_limits, dh_matrix):
-        self.angles_limits = angles_limits
+    def __init__(self, effector_workspace_limits, dh_matrix):
         self.effector_workspace_limits = effector_workspace_limits
         self.dh_matrix = dh_matrix
+        self.data_skaler = sklearn.preprocessing.MinMaxScaler()
 
     # fit trainig data
     def fit_trainig_data(self, samples, features):
@@ -169,14 +165,14 @@ class ANN:
         self.data_skaler.fit(input)
         input_scaled = self.data_skaler.fit_transform(input)
         output_scaled = output # self.out_data_skaler.fit_transform(output)
-        input_test_scaled = self.data_skaler.fit_transform(input_test_eval)
+        input_test_scaled = self.data_skaler.transform(input_test_eval)
         output_test_scaled = output_test_eval # self.out_data_skaler.fit_transform(output_test_eval)
 
         return np.array(input_scaled), np.array(output_scaled), np.array(input_test_scaled), np.array(output_test_scaled)
 
     # mse custom loss function
-    def customloss(self, yTrue, yPred, no_of_samples):
-        return (keras.backend.sum((yTrue - yPred)**2))/no_of_samples
+    # def customloss(self, yTrue, yPred, no_of_samples):
+    #     return (keras.backend.sum((yTrue - yPred)**2))/no_of_samples
 
     def train_model(self, epochs, input_train_data, output_train_data):
         self.model = keras.Sequential()
@@ -192,9 +188,7 @@ class ANN:
         self.model.add(keras.layers.Dense(units=720, activation='tanh')) # hidden layer 720 neurons
         self.model.add(keras.layers.Dense(units=4)) # theta1, theta2, theta3, theta4 -> output layer
 
-        # model_check = tf.keras.callbacks.ModelCheckpoint(filepath = 'net_weights.h5', verbose = True, save_best_only = True)
-        adam_opt = tf.keras.optimizers.Adam(lr=1.0e-5)
-        self.model.compile(optimizer=adam_opt, loss='mse')
+        self.model.compile(optimizer = tf.keras.optimizers.Adam(learning_rate=1.0e-5), loss='mse')
         self.model.fit(data_in, data_out, validation_data=(data_test_in, data_test_out), epochs=epochs) # callbacks = [model_check]
 
     def predict_ik(self, position):
@@ -208,9 +202,8 @@ class ANN:
         return self.model
 
     def save_model(self):
-        # Getting the current date and time
         dt = datetime.now()
-        # getting the timestamp as str with . replaced with - to look nicer
+        # replace . with - in filename to look better
         ts_str = str(datetime.timestamp(dt)).replace('.','-')
         self.model.save('roboarm_model_'+ts_str+'.h5')
 
@@ -294,16 +287,10 @@ class InverseKinematics:
 
     # use one of methods to compute inverse kinematics
     def compute_roboarm_ik(self, method, dest_point, max_err = 0.001, max_iterations_num = 100):
-        # Some basic limits check
+
+        # Effector limits check
         if any(dp < limitv[1][0] or dp > limitv[1][1] for dp, limitv in zip(dest_point, self.workspace_limits.items())):
             raise Exception("Point is out of RoboArm reach area! Limits: {}, ".format(self.workspace_limits))
-
-        # TODO: check how it can be handled differently
-        # effector_reach_limit = self.workspace_limits['x_limits'][1]
-        # Roboarm reach distance check
-        # TODO: remove this and assume that first joint can move vertically!!!
-        # if get_distance_between(self.first_rev_joint_point, Point(dest_point)) > effector_reach_limit: 
-        #    raise Exception("Point is out of RoboArm reach area! Reach limit is {}, but the distance to point is {}".format(effector_reach_limit, get_distance_between(self.first_rev_joint_point, Point(dest_point))))
 
         if method.lower() == "fabrik":
             # FABRIK 
@@ -317,10 +304,10 @@ class InverseKinematics:
 
             # Compute joint positions using FABRIK
             fab = Fabrik(init_joints_positions, self.joints_lengths, max_err, max_iterations_num)
-            goal_joints_positions = fab.all_joints_positions(dest_point)
+            goal_joints_positions = fab.compute(dest_point)
 
             # Compute roboarm angles from FABRIK computed positions
-            ik_angles, joints_triangles = self.fabrik_ik(goal_joints_positions)
+            ik_angles, _ = self.fabrik_ik(goal_joints_positions)
             
             # print robot arm
             # if verbose:

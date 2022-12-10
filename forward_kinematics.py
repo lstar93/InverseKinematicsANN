@@ -58,12 +58,12 @@ class ForwardKinematics:
     def __init__(self, robot_features_size = 0) -> None:
         self.robot_features_size = robot_features_size
 
-    # generate rotation matrix via rotation axis
+    # generate rotation matrix via rotation axix
     def rotation_matrix(self, rot_axis, angle):
         if (angle < -2*pi) or (angle > 2*pi):
-            raise Exception('Error, angle limits are from -2pi to 2pi')
+            raise Exception('Error, angle limits are (-2pi, 2pi)')
         if self.robot_features_size < 3:
-            raise Exception('Error, rotation matrix size and shape should be equal to 3 or greater')
+            raise Exception('Error, rotation matrix must be size of 3 or greater')
 
         # Generate rotation matrix
         if rot_axis == 'x':
@@ -82,7 +82,7 @@ class ForwardKinematics:
             raise Exception('Unknown axis name, only x, y or z are supported')
 
         # if size of robot features is greater that rotation matrix shape make rotation matrix part of identity matrix 
-        # beginning from the first element, if not just return rotation matrix
+        # beginning from the first element
         if self.robot_features_size == rot_mtx.shape[0]:
             return rot_axis
         identity_of_size = np.identity(self.robot_features_size)

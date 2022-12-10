@@ -2,6 +2,7 @@
 
 import numpy as np
 from math import sin, cos
+from plot import *
 from sklearn.preprocessing import minmax_scale
 
 # Generate learn data for ANN
@@ -42,3 +43,9 @@ class RoboarmPositionsGenerator:
     @staticmethod
     def random(no_of_samples, limits=(0,1)):
         return minmax_scale(np.random.randn(no_of_samples, 3), limits)
+
+    # Random normal distribution with scaler (generator)
+    # @staticmethod
+    # def random_gen(no_of_samples, limits=(0,1)):
+    #    for _ in range(no_of_samples):
+    #        yield minmax_scale(np.random.randn(3), limits).tolist()

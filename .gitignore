@@ -1,3 +1,5 @@
 *.h5
 joint_controller.py
 __pycache__
+gentest.py
+unit_tests.py
