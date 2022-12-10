@@ -23,26 +23,22 @@ class RoboarmPositionsGenerator:
 
     # Cube
     @staticmethod
-    def cube(step_size, len_x, len_y, len_z):
-        positions = []
-        for z in range(int(len_z/step_size)):
-            for y in range(int(len_y/step_size)):
-                for x in range(int(len_x/step_size)):
-                    positions.append([x*step_size, y*step_size, z*step_size])
-        return positions
+    def cube(step, len_x, len_y, len_z):
+        points = np.array([[[ [x,y,z] for x in np.arange(0, len_x, step) ] for y in np.arange(0, len_y, step) ] for z in np.arange(0, len_z, step)])
+        return points.reshape(np.prod(points.shape[:3]), 3)
 
-    # Cube boundries point cloud using numpy random module
+    # Cube shaped point cloud using numpy random module
     @staticmethod
-    def cube_random(size):
-        # magic number 3 is xyz dimension
-        matrix_3d = np.random.rand(size*3).reshape(size, 1, 3)
-        return [matrix_3d[x][0].tolist() for x in range(size)]
+    def cube_random(step, len_x, len_y, len_z):
+        rr = lambda x: x*np.random.rand() # resized rand
+        points = np.array([[rr(len_x), rr(len_y), rr(len_z)] for _ in np.arange(0, len_x*len_y*len_z, step)])
+        return points.reshape(np.prod(points.shape[0]), 3)
 
-    # Cube using python generator
+    # Random Cube using python generator
     @staticmethod
-    def cube_gen(step_size, len_x, len_y, len_z):
-        for x in np.arange(0, len_x*len_y*len_z, step_size):
-            yield [x//len_x, x%len_y, x%(x%len_z) ]
+    def cube_random_gen(step, len_x, len_y, len_z):
+        for _ in np.arange(0, len_x*len_y*len_z, step):
+            yield [len_x*np.random.rand(), len_y*np.random.rand(), len_z*np.random.rand()]
 
     # Random distribution
     @staticmethod
@@ -70,8 +66,8 @@ no_of_samples = 20
 centre = [1,3,1]
 
 # cube
-step = 0.5
-cube = [2, 2, 2]
+step = 1
+cube = [5, 5, 5]
 
 # TODO: check round
 
@@ -85,17 +81,17 @@ cube = [2, 2, 2]
 # plot_list_points_cloud(circleg)
 
 # OK
-cube = RoboarmPositionsGenerator.cube(step, *cube)
-print(cube)
-plot_list_points_cloud(cube)
+# cube = RoboarmPositionsGenerator.cube(step, *cube)
+# print(cube)
+# plot_list_points_cloud(cube)
 
-# TODO: resize
-# cube_random = RoboarmPositionsGenerator.cube_random(50)
+# OK
+# cube_random = RoboarmPositionsGenerator.cube_random(step, *cube)
 # print(cube_random)
 # plot_list_points_cloud(cube_random)
 
-# NOK
-# cube_gen = RoboarmPositionsGenerator.cube_gen(step, *cube)
-# cubeg = [next(cube_gen) for _ in range(int(sum(cube)/step))]
+# OK
+# cube_gen = RoboarmPositionsGenerator.cube_random_gen(step, *cube)
+# cubeg = [next(cube_gen) for _ in np.arange(0, np.prod(cube), step)]
 # print(cubeg)
 # plot_list_points_cloud(cubeg)
