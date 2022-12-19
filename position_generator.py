@@ -1,65 +1,54 @@
-
 #!/bin/python3
 
-import random as rand
 import numpy as np
 from math import sin, cos
-from scipy.stats import truncnorm
+from plot import *
+from sklearn.preprocessing import minmax_scale
 
-# Generate learning data for ANN
-class RoboarmPositionsGenerator:
+# Generate learn data for ANN
+class RoboarmTrainingDataGenerator:
     
-    def transpose(self, data):
-        return list(map(list, zip(*data))) # transpose [[x,y,z], ...] into columns [[x,...], [y,...], [z,...]] 
-
     # Circle
-    def circle(self, radius, no_of_samples, position):
-        positions=[]
+    @staticmethod
+    def circle(radius, no_of_samples, centre):
+        pos = lambda t: [centre[0], centre[1] * sin(t), centre[2] + radius*cos(t)]
+        return [pos(t) for t in range(no_of_samples)]
+
+    # Circle using generator
+    @staticmethod
+    def circle_gen(radius, no_of_samples, centre):
         for t in range(no_of_samples):
-            x=position[0]
-            y=position[1] * sin(t)
-            z=position[2] + radius*cos(t)
-            positions.append([x, y, z])
-        # if verbose:
-        #     plot_points_3d([Point([*elem]) for elem in positions])
-        return positions
+            yield [centre[0], centre[1] * sin(t), centre[2] + radius*cos(t)]
 
     # Cube
-    def cube(self, step_size, limits):
-        positions=[]
-        all_x = []
-        all_y = []
-        all_z = []
-        for x in np.linspace(*limits['x_limits'], step_size):
-            for y in np.linspace(*limits['y_limits'], step_size):
-                all_x += list(np.linspace(x,x,step_size))
-                all_y += list(np.linspace(y,y,step_size))
-                all_z += list(np.linspace(*limits['z_limits'], step_size))
-        for x, y, z in zip(all_x, all_y, all_z):
-            positions.append([x,y,z])
-        # if verbose:
-        #     plot_points_3d([Point([*elem]) for elem in positions])
-        return positions
+    @staticmethod
+    def cube(step, len_x, len_y, len_z, start=(0,0,0)):
+        points = np.array([[[ [x+start[0], y+start[1], z+start[2]] 
+                                for x in np.arange(0, len_x, step) ] 
+                                    for y in np.arange(0, len_y, step) ] 
+                                        for z in np.arange(0, len_z, step)])
+        return points.reshape(np.prod(points.shape[:3]), 3).tolist()
 
-    def get_truncated_normal_distribution(self, mean=0, sd=1, low=0, upp=10):
-        return truncnorm((low - mean) / sd, (upp - mean) / sd, loc=mean, scale=sd)
+    # Cube shaped point cloud using numpy random module
+    @staticmethod
+    def cube_random(step, len_x, len_y, len_z, start=(0,0,0)):
+        rr = lambda x: x*np.random.rand() # resized rand
+        points = np.array([[rr(len_x)+start[0], rr(len_y)+start[1], rr(len_z)+start[2]] for _ in np.arange(0, len_x*len_y*len_z, step)])
+        return points.reshape(np.prod(points.shape[0]), 3).tolist()
 
-    # Random distribution
-    def random(self, no_of_samples, limits, distribution = 'normal'):
-        positions = [] # output samples -> angles
-        for _, limitv in limits.items():
-            if distribution == 'normal':
-                val = list(self.get_truncated_normal_distribution(mean=0, sd=0.5, low=limitv[0], upp=limitv[1]).rvs(no_of_samples))
-                positions.append(val)
-            elif distribution == 'uniform':
-                positions.append([rand.uniform(*limitv) for x in range(no_of_samples)])
-            elif distribution == 'random':
-                # just random shuffled data
-                arr = np.linspace(limitv[0],limitv[1],no_of_samples)
-                np.random.shuffle(arr)
-                positions.append(arr)
-            else:
-                raise Exception('Unknown distribution, use: \'normal\' (default), \'unifrom\', \'random\'')
-        # if verbose:
-        #     plot_points_3d([Point([*elem]) for elem in self.transpose(positions)])
-        return self.transpose(positions)
+    # Random Cube using python generator
+    @staticmethod
+    def cube_random_gen(step, len_x, len_y, len_z, start=(0,0,0)):
+        for _ in np.arange(0, len_x*len_y*len_z, step):
+            yield [len_x*np.random.rand()+start[0], len_y*np.random.rand()+start[1], len_z*np.random.rand()+start[2]]
+
+    # Random normal distribution with scaler
+    @staticmethod
+    def random(no_of_samples, limits=(0,1)):
+        return minmax_scale(np.random.randn(no_of_samples, 3), limits)
+
+    # Random normal distribution with scaler (generator)
+    # @staticmethod
+    # def random_gen(no_of_samples, limits=(0,1)):
+    #    for _ in range(no_of_samples):
+    #        yield minmax_scale(np.random.randn(3), limits).tolist()\

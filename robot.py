@@ -1,7 +1,5 @@
 #!/bin/python3
 
-# DH notation
-
 '''       
       2y |          | 3y
          |     l3   |
@@ -16,109 +14,87 @@
     \ /
      |
 _____|_____
-  i  |  ai  |  Li  |  Ei  |  Oi  |
-----------------------------------
-  1  |   0  | pi/2 |  l1  |  O1  |
-----------------------------------
-  2  |  l2  |  0   |   0  |  O2  |
-----------------------------------
-  3  |  l3  |  0   |   0  |  O3  |
-----------------------------------
-  4  |  l4  |  0   |   0  |  O4  |
-----------------------------------
-Rotation matrixes:
-Rt(x, L):
-    [[1,         0,       0   ]
-     [0,       cos(L), -sin(L)]
-     [0,       sin(L),  cos(L)]]
-Rt(y, B):
-    [[cos(B),    0,     sin(B)]
-     [0,         1,       0   ]
-     [-sin(B),   0,     cos(B)]]
-Rt(z, G):
-    [[cos(G), -sin(G),    0   ]
-     [sin(G),  cos(G),    0   ]
-     [0,         0,       1   ]]
+
+TODO:
+1. read robot configuration (with angle limits) from file
+2. simple CLI to choose/save model and data generator
+3. add CSV positions handling via CLI
 '''
 
 from position_generator import *
 from forward_kinematics import *
 from inverse_kinematics import *
 from plot import *
+import sys
 
-# Use existing inverse kinematics engine (FABRIK) to compute joints angles to test model
-def compute_angles(data, ikine_engine):
-    angles = []
-    for dest_point in data:
-        try:
-            angles.append(ikine_engine.compute_roboarm_ik('FABRIK', dest_point, 0.001, 100))
-        except Exception as e:
-            print('Excpetion in compute_angles: {}'.format(e))
-    return angles
 
-# test ANN
 if __name__ == '__main__':
 
-    # 6 DOF robot DH matrix
-    dh_matrix = [[0, pi/2, 0, 0], [2, 0, 0, 0], [0, 2, 2, 2], [pi/2, 0, 0, 0]]
+	# 6 DOF robot DH matrix
+	dh_matrix = [[0, pi/2, 0, 0], [2, 0, 0, 0], [0, 2, 2, 2], [pi/2, 0, 0, 0]]
 
-    # assumed links lengths
-    links_lengths = [2, 2, 2, 2]
+	# links lengths, workspace and joints limits
+	effector_workspace_limits = {'x': [1,6], 'y': [-6,6], 'z': [0,6]} # assumed limits
+	links_lengths = [2, 2, 2, 2]
 
-    # workspace and joint angles limits
-    joints_angles_limits = {'theta_1': [-pi/2,pi/2], 'theta_2': [-pi/4,pi/2], 'theta_3': [-pi/2,pi/2], 'theta_4': [-pi/2,pi/2]} # assumed joints angles limits
-    effector_workspace_limits = {'x_limits': [1,6], 'y_limits': [-6,6], 'z_limits': [0,6]} # assumed limits
-    first_rev_joint_point = Point([0,0,2]) # first revolute joint, from this point reach limit will be computed
+	# inverse kinematics engine
+	ikine = InverseKinematics(dh_matrix, links_lengths, effector_workspace_limits)
 
-    # inverse kinematics engine
-    ikine = InverseKinematics(dh_matrix, links_lengths, effector_workspace_limits, first_rev_joint_point)
+	# forward kinematics
+	fkine = ForwardKinematics()
 
-    # forward kinematics
-    fkine = ForwardKinematics()
-    ik_angles = [] # computed joints angles
+	#try:
+	### CREATE MODEL
 
-    # random positions generator class -> used to train model
-    generator = RoboarmPositionsGenerator()
+	ann = ANN(effector_workspace_limits, dh_matrix)
 
-    try:
-        limits = {'x_limits': [1,4], 'y_limits': [-4,4], 'z_limits': [0,4]} # assumed limits
-        positions_samples = generator.random(no_of_samples = 10, limits = limits, distribution='random')
-        # positions_samples = generator.cube(step_size = 5, limits = limits)
-        angles_features = compute_angles(positions_samples, ikine)
+	# prepare training data
+	# no_of_samples = 10
+	positions_samples = RoboarmTrainingDataGenerator.cube_random(0.5, 5, 12, 6, (1,-6,0))
+	print(len(positions_samples))
+	print(np.array(positions_samples).shape)
 
-        # model test trajectory datasets
-        circle_samples_test = generator.circle(radius = 1, no_of_samples = 20, position = [1,3,1])
-        cube_samples_test = generator.cube(step_size = 5, limits = limits)
+	# calculate joints angles using FABRIK algorithm
+	angles_features = [ikine.ikine('FABRIK', pos) for pos in positions_samples]
 
-        # plot_points_cloud([Point([*elem]) for elem in positions_samples])
-        ann = ANN(joints_angles_limits, effector_workspace_limits, dh_matrix)
+	# train model using generated dataset
+	# ann.train_model(epochs=2000, positions_samples, angles_features) # random data
+	# ann.fit_trainig_data(positions_samples, angles_features)
+	# use existing model
+	ann.load_model('roboarm_model_1664488076-610064.h5')
 
-        epochs=2000
-        ann.train_model(epochs, positions_samples, angles_features) # random data
+	### TEST MODEL
 
-        # from keras.models import load_model
-        # ann.load_model('roboarm_model_1664488076-610064.h5')
+	# test trajectory data
+	# test_shape = [3, 3, 3]
+	# test_samples_test = RoboarmTrainingDataGenerator.random(50)
+	# plot_list_points_cloud(test_samples_test)
 
-        # ANN
-        print("ANN")
-        predicted_points = []
-        ik_angles_ann = ann.predict_ik(cube_samples_test).tolist()
+	# test trajectory using circle
+	radius = 5
+	no_of_samples = 100
+	centre = [1,3,1]
+	test_samples_test = RoboarmTrainingDataGenerator.circle(radius, no_of_samples, centre)
+	plot_list_points_cloud(test_samples_test)
 
-        # print/plot test points
-        plot_points_cloud([Point([*elem]) for elem in cube_samples_test])
-        print('sample: ' + str(np.array(cube_samples_test)))
+	# predict positions on generated data
+	predicted_points = []
+	ik_angles_ann = ann.predict_ik(test_samples_test).tolist()
 
-        # compute FK to check ANN IK
-        for angles in ik_angles_ann:
-            dh_matrix_out = [angles, [2, 0, 0, 0], [0, 2, 2, 2], [pi/2, 0, 0, 0]]
-            fk, _ = fkine.forward_kinematics(*dh_matrix_out)
-            predicted_points.append(Point([fk[0,3], fk[1,3], fk[2,3]]))
+	# compute FK to check ANN IK
+	for angles in ik_angles_ann:
+		fk, _ = fkine.fkine(*[angles, *dh_matrix[1:]])
+		predicted_points.append([fk[0,3], fk[1,3], fk[2,3]])
 
-        # print/plot predicted points
-        plot_points_cloud(predicted_points)
-        print('predicted: ' + str(np.array(predicted_points)))
+	# print/plot predicted points
+	plot_list_points_cloud(predicted_points)
+	# print(len(predicted_points))
+	# print(np.array(predicted_points).shape)
+	# print('predicted: ' + str(predicted_points))
+	# print(np.array(cube_samples_test) - np.array(predicted_points))
 
-        # ann.save_model()
+	# save exceptional models
+	# ann.save_model()
 
-    except Exception as e:
-        print(str(e))
+	# except Exception as e:
+	# 	print(str(e))
