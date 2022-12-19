@@ -1,7 +1,5 @@
 #!/bin/python3
 
-# DH notation
-
 '''       
       2y |          | 3y
          |     l3   |
@@ -16,32 +14,7 @@
     \ /
      |
 _____|_____
-  i  |  ai  |  Li  |  Ei  |  Oi  |
-----------------------------------
-  1  |   0  | pi/2 |  l1  |  O1  |
-----------------------------------
-  2  |  l2  |  0   |   0  |  O2  |
-----------------------------------
-  3  |  l3  |  0   |   0  |  O3  |
-----------------------------------
-  4  |  l4  |  0   |   0  |  O4  |
-----------------------------------
-Rotation matrixes:
-Rt(x, L):
-    [[1,         0,       0   ]
-     [0,       cos(L), -sin(L)]
-     [0,       sin(L),  cos(L)]]
-Rt(y, B):
-    [[cos(B),    0,     sin(B)]
-     [0,         1,       0   ]
-     [-sin(B),   0,     cos(B)]]
-Rt(z, G):
-    [[cos(G), -sin(G),    0   ]
-     [sin(G),  cos(G),    0   ]
-     [0,         0,       1   ]]
-'''
 
-'''
 TODO:
 1. read robot configuration (with angle limits) from file
 2. simple CLI to choose/save model and data generator
@@ -61,7 +34,6 @@ if __name__ == '__main__':
 	dh_matrix = [[0, pi/2, 0, 0], [2, 0, 0, 0], [0, 2, 2, 2], [pi/2, 0, 0, 0]]
 
 	# links lengths, workspace and joints limits
-	# joints_angles_limits = {'theta_1': [-pi/2,pi/2], 'theta_2': [-pi/4,pi/2], 'theta_3': [-pi/2,pi/2], 'theta_4': [-pi/2,pi/2]} # assumed joints angles limits
 	effector_workspace_limits = {'x': [1,6], 'y': [-6,6], 'z': [0,6]} # assumed limits
 	links_lengths = [2, 2, 2, 2]
 
@@ -70,7 +42,6 @@ if __name__ == '__main__':
 
 	# forward kinematics
 	fkine = ForwardKinematics()
-	ik_angles = [] # computed joints angles
 
 	#try:
 	### CREATE MODEL
@@ -79,34 +50,40 @@ if __name__ == '__main__':
 
 	# prepare training data
 	# no_of_samples = 10
-	positions_samples = RoboarmPositionsGenerator.cube_random(0.5, 5, 12, 6, (1,-6,0))
+	positions_samples = RoboarmTrainingDataGenerator.cube_random(0.5, 5, 12, 6, (1,-6,0))
 	print(len(positions_samples))
 	print(np.array(positions_samples).shape)
 
 	# calculate joints angles using FABRIK algorithm
-	angles_features = [ikine.compute_roboarm_ik('FABRIK', pos) for pos in positions_samples]
+	angles_features = [ikine.ikine('FABRIK', pos) for pos in positions_samples]
 
 	# train model using generated dataset
 	# ann.train_model(epochs=2000, positions_samples, angles_features) # random data
-
+	# ann.fit_trainig_data(positions_samples, angles_features)
 	# use existing model
 	ann.load_model('roboarm_model_1664488076-610064.h5')
 
 	### TEST MODEL
 
 	# test trajectory data
-	cube_shape = [3, 3, 3]
-	cube_samples_test = RoboarmPositionsGenerator.random(50)
+	# test_shape = [3, 3, 3]
+	# test_samples_test = RoboarmTrainingDataGenerator.random(50)
+	# plot_list_points_cloud(test_samples_test)
 
-	plot_list_points_cloud(cube_samples_test)
+	# test trajectory using circle
+	radius = 5
+	no_of_samples = 100
+	centre = [1,3,1]
+	test_samples_test = RoboarmTrainingDataGenerator.circle(radius, no_of_samples, centre)
+	plot_list_points_cloud(test_samples_test)
 
 	# predict positions on generated data
 	predicted_points = []
-	ik_angles_ann = ann.predict_ik(cube_samples_test).tolist()
+	ik_angles_ann = ann.predict_ik(test_samples_test).tolist()
 
 	# compute FK to check ANN IK
 	for angles in ik_angles_ann:
-		fk, _ = fkine.forward_kinematics(*[angles, *dh_matrix[1:]])
+		fk, _ = fkine.fkine(*[angles, *dh_matrix[1:]])
 		predicted_points.append([fk[0,3], fk[1,3], fk[2,3]])
 
 	# print/plot predicted points
@@ -114,7 +91,7 @@ if __name__ == '__main__':
 	# print(len(predicted_points))
 	# print(np.array(predicted_points).shape)
 	# print('predicted: ' + str(predicted_points))
-	print(np.array(cube_samples_test) - np.array(predicted_points))
+	# print(np.array(cube_samples_test) - np.array(predicted_points))
 
 	# save exceptional models
 	# ann.save_model()

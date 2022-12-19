@@ -1,56 +1,15 @@
 #!/bin/python3
 
-# DH notation
-
-'''       
-      2y |          | 3y
-         |     l3   |
-         0-->-------0--> 3x
-        /  2x        \
-   y1| / l2        l4 \ |4y
-     |/                \|
-  1z 0-->1x          4z 0-->4x 
-     |                 ----
-     | l1              |  |
-    /_\
-    \ /
-     |
-_____|_____
-  i  |  ai  |  Li  |  Ei  |  Oi  |
-----------------------------------
-  1  |   0  | pi/2 |  l1  |  O1  |
-----------------------------------
-  2  |  l2  |  0   |   0  |  O2  |
-----------------------------------
-  3  |  l3  |  0   |   0  |  O3  |
-----------------------------------
-  4  |  l4  |  0   |   0  |  O4  |
-----------------------------------
-Rotation matrixes:
-Rt(x, L):
-    [[1,         0,       0   ]
-     [0,       cos(L), -sin(L)]
-     [0,       sin(L),  cos(L)]]
-Rt(y, B):
-    [[cos(B),    0,     sin(B)]
-     [0,         1,       0   ]
-     [-sin(B),   0,     cos(B)]]
-Rt(z, G):
-    [[cos(G), -sin(G),    0   ]
-     [sin(G),  cos(G),    0   ]
-     [0,         0,       1   ]]
-'''
-
-from keras.models import load_model
+from keras.models import load_model, Sequential
+from keras.optimizers import Adam
+from keras.layers import Dense
 from datetime import datetime
-import numpy as np
 from math import pi, sqrt, atan2, acos
-import sklearn
-from sklearn import model_selection
-import keras
-import tensorflow as tf
-
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import MinMaxScaler
 from forward_kinematics import ForwardKinematics
+
+import numpy as np
 
 # supress printing enormous small numbers like 0.123e-16
 np.set_printoptions(suppress=True)
@@ -154,48 +113,44 @@ class ANN:
     def __init__(self, effector_workspace_limits, dh_matrix):
         self.effector_workspace_limits = effector_workspace_limits
         self.dh_matrix = dh_matrix
-        self.data_skaler = sklearn.preprocessing.MinMaxScaler()
 
     # fit trainig data
     def fit_trainig_data(self, samples, features):
         # split data into training (70%), test and evaluation (30%)
-        input, input_test_eval, output, output_test_eval = model_selection.train_test_split(samples, features, test_size=0.3, random_state=42)
+        input, input_test_eval, output, output_test_eval = train_test_split(samples, features, test_size=0.33, random_state=105)
 
         # fit data using scaler
-        self.data_skaler.fit(input)
-        input_scaled = self.data_skaler.fit_transform(input)
-        output_scaled = output # self.out_data_skaler.fit_transform(output)
-        input_test_scaled = self.data_skaler.transform(input_test_eval)
-        output_test_scaled = output_test_eval # self.out_data_skaler.fit_transform(output_test_eval)
+        data_skaler = MinMaxScaler()
+        input_scaled = data_skaler.fit_transform(input)
+        input_test_scaled = data_skaler.transform(input_test_eval)
 
-        return np.array(input_scaled), np.array(output_scaled), np.array(input_test_scaled), np.array(output_test_scaled)
+        return np.array(input_scaled), np.array(output), np.array(input_test_scaled), np.array(output_test_eval)
 
     # mse custom loss function
     # def customloss(self, yTrue, yPred, no_of_samples):
     #     return (keras.backend.sum((yTrue - yPred)**2))/no_of_samples
 
-    def train_model(self, epochs, input_train_data, output_train_data):
-        self.model = keras.Sequential()
-        data_in, data_out, data_test_in, data_test_out = self.fit_trainig_data(input_train_data, output_train_data)
+    def train_model(self, epochs, samples, features):
+        self.model = Sequential()
+        data_in, data_out, data_test_in, data_test_out = self.fit_trainig_data(samples, features)
 
         # self.model.add(keras.layers.Dense(units=3, activation='tanh')) # x, y, z -> input layer
-        self.model.add(keras.layers.Dense(units=720, activation='tanh')) # hidden layer 720 neurons
-        self.model.add(keras.layers.Dense(units=1080, activation='tanh')) # hidden layer 1080 neurons
-        self.model.add(keras.layers.Dense(units=1440, activation='tanh')) # hidden layer 1440 neurons
-        self.model.add(keras.layers.Dense(units=2160, activation='tanh')) # hidden layer 2160 neurons
-        self.model.add(keras.layers.Dense(units=1440, activation='tanh')) # hidden layer 1440 neurons
-        self.model.add(keras.layers.Dense(units=1080, activation='tanh')) # hidden layer 1080 neurons
-        self.model.add(keras.layers.Dense(units=720, activation='tanh')) # hidden layer 720 neurons
-        self.model.add(keras.layers.Dense(units=4)) # theta1, theta2, theta3, theta4 -> output layer
+        self.model.add(Dense(units=720, activation='tanh')) # hidden layer 720 neurons
+        self.model.add(Dense(units=1080, activation='tanh')) # hidden layer 1080 neurons
+        self.model.add(Dense(units=1440, activation='tanh')) # hidden layer 1440 neurons
+        self.model.add(Dense(units=2160, activation='tanh')) # hidden layer 2160 neurons
+        self.model.add(Dense(units=1440, activation='tanh')) # hidden layer 1440 neurons
+        self.model.add(Dense(units=1080, activation='tanh')) # hidden layer 1080 neurons
+        self.model.add(Dense(units=720, activation='tanh')) # hidden layer 720 neurons
+        self.model.add(Dense(units=4)) # theta1, theta2, theta3, theta4 -> output layer
 
         # todo: add early stopping
 
-        self.model.compile(optimizer = tf.keras.optimizers.Adam(learning_rate=1.0e-5), loss='mse')
+        self.model.compile(optimizer = Adam(learning_rate=1.0e-5), loss='mse')
         self.model.fit(data_in, data_out, validation_data=(data_test_in, data_test_out), epochs=epochs) # callbacks = [model_check]
 
     def predict_ik(self, position):
-        position_scaled = self.data_skaler.fit_transform(np.array(position))
-        return  self.model.predict(position_scaled)
+        return  self.model.predict(position)
 
     def load_model(self, model_h5):
         self.model = load_model(model_h5)
@@ -293,11 +248,19 @@ class InverseKinematics:
 
         return [theta_1, theta_2, theta_3, theta_4], [base, first_triangle, second_triangle, third_triangle]
 
-    def ann_ik(self, gp):
-        pass
+    def ann_train_model(self, epochs, samples, features):
+        self.ann = ANN(self.workspace_limits, self.dh_matrix)
+        self.ann.train_model(epochs=epochs, input_train_data=samples, output_train_data=features) # random data
+
+    def ann_ik(self, goal_point, train=False, model_path=None):
+        ann = ANN(self.workspace_limits, self.dh_matrix)
+        if train:
+            ann = ANN(self.workspace_limits, self.dh_matrix)
+        else:
+            ann.load_model(model_path)
 
     # use one of methods to compute inverse kinematics
-    def compute_roboarm_ik(self, method, dest_point, max_err = 0.001, max_iterations_num = 100):
+    def ikine(self, method, dest_point, max_err = 0.001, max_iterations_num = 100):
 
         # Effector limits check
         if any(dp < limitv[1][0] or dp > limitv[1][1] for dp, limitv in zip(dest_point, self.workspace_limits.items())):
@@ -310,7 +273,7 @@ class InverseKinematics:
 
             # Compute initial xyz possition of every robot joint
             fkine = ForwardKinematics()
-            _, fk_all = fkine.forward_kinematics(*self.dh_matrix)
+            _, fk_all = fkine.fkine(*self.dh_matrix)
             init_joints_positions = [Point([x[0][3], x[1][3], x[2][3]]) for x in fk_all]
 
             # Compute joint positions using FABRIK
@@ -319,10 +282,6 @@ class InverseKinematics:
 
             # Compute roboarm angles from FABRIK computed positions
             ik_angles, _ = self.fabrik_ik(goal_joints_positions)
-            
-            # print robot arm
-            # if verbose:
-            #     plot_roboarm([*joints_triangles, init_joints_positions, goal_joints_positions], [init_joints_positions[0], goal_joints_positions[-1]])
         
             return ik_angles
 
@@ -330,3 +289,22 @@ class InverseKinematics:
             return None
         
         raise Exception('Unknown method!')
+
+
+# Abstract class way
+'''
+from abc import abstractclassmethod, ABCMeta
+
+class InverseKinematicsBase(metaclass=ABCMeta):
+    @abstractclassmethod
+    def ikine(self, dest_point):
+        pass
+
+class IKineFabric(InverseKinematicsBase):
+    def ikine(self, dest_point):
+        pass
+
+class IKineANN(InverseKinematicsBase):
+    def ikine(self, dest_point):
+        pass
+'''

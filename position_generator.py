@@ -6,7 +6,7 @@ from plot import *
 from sklearn.preprocessing import minmax_scale
 
 # Generate learn data for ANN
-class RoboarmPositionsGenerator:
+class RoboarmTrainingDataGenerator:
     
     # Circle
     @staticmethod
