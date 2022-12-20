@@ -44,7 +44,8 @@ if __name__ == '__main__':
 
 	#try:
 	### CREATE MODEL
-
+	joints_angles_limits = {'theta_1': [-pi/2,pi/2], 'theta_2': [-pi/4,pi/2], 'theta_3': [-pi/2,pi/2], 'theta_4': [-pi/2,pi/2]} # assumed joints angles limits
+	# ann = ANN2(joints_angles_limits, effector_workspace_limits, dh_matrix)
 	ann = ANN(effector_workspace_limits, dh_matrix)
 
 	# prepare training data
@@ -53,8 +54,8 @@ if __name__ == '__main__':
 	# print(len(positions_samples))
 	# print(np.array(positions_samples).shape)
 	# positions_samples = RoboarmTrainingDataGenerator.random(20000, limits=effector_workspace_limits)
-	positions_samples = RoboarmTrainingDataGenerator.random(no_of_samples = 50000, limits = effector_workspace_limits, distribution='random')
-	angles_features = [ikine.ikine('FABRIK', pos) for pos in positions_samples] # use FABRIK to prepare train/test features
+	# positions_samples = RoboarmTrainingDataGenerator.random(no_of_samples = 50000, limits = effector_workspace_limits, distribution='random')
+	# angles_features = [ikine.ikine('FABRIK', pos) for pos in positions_samples] # use FABRIK to prepare train/test features
 
 	# train model using generated dataset
 	# epochs = 1000
@@ -87,13 +88,12 @@ if __name__ == '__main__':
 
 	# compute FK to check ANN IK
 	for angles in ik_angles_ann:
-		dh_matrix[0] = angles
-		print(dh_matrix)
-		fk, _ = fkine.fkine(*dh_matrix)
-		predicted_points.append([fk[0,3], fk[1,3], fk[2,3]])
+		dh_matrix_out = [angles, [2, 0, 0, 0], [0, 2, 2, 2], [pi/2, 0, 0, 0]]
+		fk, _ = fkine.fkine(*dh_matrix_out)
+		predicted_points.append(Point([fk[0,3], fk[1,3], fk[2,3]]))
 
 	# print/plot predicted points
-	plot_list_points_cloud(predicted_points)
+	plot_points_cloud(predicted_points)
 	# print(len(predicted_points))
 	# print(np.array(predicted_points).shape)
 	# print('predicted: ' + str(predicted_points))
