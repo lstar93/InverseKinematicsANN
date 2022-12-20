@@ -44,8 +44,6 @@ if __name__ == '__main__':
 
 	#try:
 	### CREATE MODEL
-	joints_angles_limits = {'theta_1': [-pi/2,pi/2], 'theta_2': [-pi/4,pi/2], 'theta_3': [-pi/2,pi/2], 'theta_4': [-pi/2,pi/2]} # assumed joints angles limits
-	# ann = ANN2(joints_angles_limits, effector_workspace_limits, dh_matrix)
 	ann = ANN(effector_workspace_limits, dh_matrix)
 
 	# prepare training data
@@ -68,9 +66,9 @@ if __name__ == '__main__':
 	### TEST MODEL
 
 	# test trajectory data
-	test_shape = [3, 3, 3]
-	test_samples_test = RoboarmTrainingDataGenerator.cube(1, *test_shape)
-	plot_list_points_cloud(test_samples_test)
+	# test_shape = [3, 3, 3]
+	# test_samples_test = RoboarmTrainingDataGenerator.cube(1, *test_shape)
+	# plot_list_points_cloud(test_samples_test)
 
 	# test trajectory using circle
 	# radius = 5
@@ -79,8 +77,8 @@ if __name__ == '__main__':
 	# test_samples_test = RoboarmTrainingDataGenerator.circle(radius, no_of_samples, centre)
 	# plot_list_points_cloud(test_samples_test)
 
-	# test_samples_test = RoboarmTrainingDataGenerator.random(5, limits=effector_workspace_limits)
-	# plot_list_points_cloud(test_samples_test)
+	test_samples_test = RoboarmTrainingDataGenerator.random(5, limits=effector_workspace_limits)
+	plot_points_3d(test_samples_test)
 
 	# predict positions on generated data
 	predicted_points = []
@@ -90,10 +88,10 @@ if __name__ == '__main__':
 	for angles in ik_angles_ann:
 		dh_matrix_out = [angles, [2, 0, 0, 0], [0, 2, 2, 2], [pi/2, 0, 0, 0]]
 		fk, _ = fkine.fkine(*dh_matrix_out)
-		predicted_points.append(Point([fk[0,3], fk[1,3], fk[2,3]]))
+		predicted_points.append([fk[0,3], fk[1,3], fk[2,3]])
 
 	# print/plot predicted points
-	plot_points_cloud(predicted_points)
+	plot_points_3d(predicted_points, path=True)
 	# print(len(predicted_points))
 	# print(np.array(predicted_points).shape)
 	# print('predicted: ' + str(predicted_points))
