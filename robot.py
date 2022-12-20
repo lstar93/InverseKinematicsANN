@@ -27,14 +27,13 @@ from inverse_kinematics import *
 from plot import *
 import sys
 
-
 if __name__ == '__main__':
 
 	# 6 DOF robot DH matrix
 	dh_matrix = [[0, pi/2, 0, 0], [2, 0, 0, 0], [0, 2, 2, 2], [pi/2, 0, 0, 0]]
 
 	# links lengths, workspace and joints limits
-	effector_workspace_limits = {'x': [1,6], 'y': [-6,6], 'z': [0,6]} # assumed limits
+	effector_workspace_limits = {'x': [0,6], 'y': [-6,6], 'z': [0,6]} # assumed limits
 	links_lengths = [2, 2, 2, 2]
 
 	# inverse kinematics engine
@@ -50,32 +49,37 @@ if __name__ == '__main__':
 
 	# prepare training data
 	# no_of_samples = 10
-	positions_samples = RoboarmTrainingDataGenerator.cube_random(0.5, 5, 12, 6, (1,-6,0))
-	print(len(positions_samples))
-	print(np.array(positions_samples).shape)
-
-	# calculate joints angles using FABRIK algorithm
-	angles_features = [ikine.ikine('FABRIK', pos) for pos in positions_samples]
+	# positions_samples = RoboarmTrainingDataGenerator.cube_random(0.5, 5, 12, 6, (1,-6,0))
+	# print(len(positions_samples))
+	# print(np.array(positions_samples).shape)
+	# positions_samples = RoboarmTrainingDataGenerator.random(20000, limits=effector_workspace_limits)
+	positions_samples = RoboarmTrainingDataGenerator.random(no_of_samples = 50000, limits = effector_workspace_limits, distribution='random')
+	angles_features = [ikine.ikine('FABRIK', pos) for pos in positions_samples] # use FABRIK to prepare train/test features
 
 	# train model using generated dataset
-	# ann.train_model(epochs=2000, positions_samples, angles_features) # random data
+	# epochs = 1000
+	# ann.train_model(epochs, positions_samples, angles_features) # random data
 	# ann.fit_trainig_data(positions_samples, angles_features)
+
 	# use existing model
-	ann.load_model('roboarm_model_1664488076-610064.h5')
+	ann.load_model('roboarm_model_1671540494-834831.h5')
 
 	### TEST MODEL
 
 	# test trajectory data
-	# test_shape = [3, 3, 3]
-	# test_samples_test = RoboarmTrainingDataGenerator.random(50)
-	# plot_list_points_cloud(test_samples_test)
+	test_shape = [3, 3, 3]
+	test_samples_test = RoboarmTrainingDataGenerator.cube(1, *test_shape)
+	plot_list_points_cloud(test_samples_test)
 
 	# test trajectory using circle
-	radius = 5
-	no_of_samples = 100
-	centre = [1,3,1]
-	test_samples_test = RoboarmTrainingDataGenerator.circle(radius, no_of_samples, centre)
-	plot_list_points_cloud(test_samples_test)
+	# radius = 5
+	# no_of_samples = 100
+	# centre = [1,3,1]
+	# test_samples_test = RoboarmTrainingDataGenerator.circle(radius, no_of_samples, centre)
+	# plot_list_points_cloud(test_samples_test)
+
+	# test_samples_test = RoboarmTrainingDataGenerator.random(5, limits=effector_workspace_limits)
+	# plot_list_points_cloud(test_samples_test)
 
 	# predict positions on generated data
 	predicted_points = []
@@ -83,7 +87,9 @@ if __name__ == '__main__':
 
 	# compute FK to check ANN IK
 	for angles in ik_angles_ann:
-		fk, _ = fkine.fkine(*[angles, *dh_matrix[1:]])
+		dh_matrix[0] = angles
+		print(dh_matrix)
+		fk, _ = fkine.fkine(*dh_matrix)
 		predicted_points.append([fk[0,3], fk[1,3], fk[2,3]])
 
 	# print/plot predicted points

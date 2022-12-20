@@ -3,6 +3,7 @@
 from keras.models import load_model, Sequential
 from keras.optimizers import Adam
 from keras.layers import Dense
+from keras.callbacks import EarlyStopping
 from datetime import datetime
 from math import pi, sqrt, atan2, acos
 from sklearn.model_selection import train_test_split
@@ -113,6 +114,7 @@ class ANN:
     def __init__(self, effector_workspace_limits, dh_matrix):
         self.effector_workspace_limits = effector_workspace_limits
         self.dh_matrix = dh_matrix
+        self.model = Sequential()
 
     # fit trainig data
     def fit_trainig_data(self, samples, features):
@@ -131,26 +133,30 @@ class ANN:
     #     return (keras.backend.sum((yTrue - yPred)**2))/no_of_samples
 
     def train_model(self, epochs, samples, features):
-        self.model = Sequential()
         data_in, data_out, data_test_in, data_test_out = self.fit_trainig_data(samples, features)
 
         # self.model.add(keras.layers.Dense(units=3, activation='tanh')) # x, y, z -> input layer
-        self.model.add(Dense(units=720, activation='tanh')) # hidden layer 720 neurons
-        self.model.add(Dense(units=1080, activation='tanh')) # hidden layer 1080 neurons
-        self.model.add(Dense(units=1440, activation='tanh')) # hidden layer 1440 neurons
-        self.model.add(Dense(units=2160, activation='tanh')) # hidden layer 2160 neurons
-        self.model.add(Dense(units=1440, activation='tanh')) # hidden layer 1440 neurons
-        self.model.add(Dense(units=1080, activation='tanh')) # hidden layer 1080 neurons
-        self.model.add(Dense(units=720, activation='tanh')) # hidden layer 720 neurons
+        self.model.add(Dense(units=1440, activation='tanh')) # hidden layer 720 neurons
+        self.model.add(Dense(units=2160, activation='tanh')) # hidden layer 1080 neurons
+        self.model.add(Dense(units=2160, activation='tanh')) # hidden layer 1440 neurons
+        self.model.add(Dense(units=3240, activation='tanh')) # hidden layer 2160 neurons
+        self.model.add(Dense(units=4320, activation='tanh')) # hidden layer 3240 neurons
+        self.model.add(Dense(units=4320, activation='tanh')) # hidden layer 4320 neurons
+        self.model.add(Dense(units=4320, activation='tanh')) # hidden layer 3240 neurons
+        self.model.add(Dense(units=3240, activation='tanh')) # hidden layer 2160 neurons
+        self.model.add(Dense(units=2160, activation='tanh')) # hidden layer 1440 neurons
+        self.model.add(Dense(units=2160, activation='tanh')) # hidden layer 1080 neurons
+        self.model.add(Dense(units=1440, activation='tanh')) # hidden layer 720 neurons
         self.model.add(Dense(units=4)) # theta1, theta2, theta3, theta4 -> output layer
 
         # todo: add early stopping
+        early_stopping = EarlyStopping(monitor='val_loss', patience=20)
 
-        self.model.compile(optimizer = Adam(learning_rate=1.0e-5), loss='mse')
-        self.model.fit(data_in, data_out, validation_data=(data_test_in, data_test_out), epochs=epochs) # callbacks = [model_check]
+        self.model.compile(optimizer = Adam(learning_rate=1.0e-6), loss='mse')
+        self.model.fit(data_in, data_out, validation_data=(data_test_in, data_test_out), epochs=epochs, callbacks=[early_stopping]) # callbacks = [model_check]
 
     def predict_ik(self, position):
-        return  self.model.predict(position)
+        return self.model.predict(position)
 
     def load_model(self, model_h5):
         self.model = load_model(model_h5)
