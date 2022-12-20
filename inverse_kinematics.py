@@ -115,6 +115,7 @@ class ANN:
         self.effector_workspace_limits = effector_workspace_limits
         self.dh_matrix = dh_matrix
         self.model = Sequential()
+        self.data_skaler = MinMaxScaler()
 
     # fit trainig data
     def fit_trainig_data(self, samples, features):
@@ -122,9 +123,8 @@ class ANN:
         input, input_test_eval, output, output_test_eval = train_test_split(samples, features, test_size=0.33, random_state=105)
 
         # fit data using scaler
-        data_skaler = MinMaxScaler()
-        input_scaled = data_skaler.fit_transform(input)
-        input_test_scaled = data_skaler.transform(input_test_eval)
+        input_scaled = self.data_skaler.fit_transform(input)
+        input_test_scaled = self.data_skaler.transform(input_test_eval)
 
         return np.array(input_scaled), np.array(output), np.array(input_test_scaled), np.array(output_test_eval)
 
@@ -136,27 +136,26 @@ class ANN:
         data_in, data_out, data_test_in, data_test_out = self.fit_trainig_data(samples, features)
 
         # self.model.add(keras.layers.Dense(units=3, activation='tanh')) # x, y, z -> input layer
-        self.model.add(Dense(units=1440, activation='tanh')) # hidden layer 720 neurons
-        self.model.add(Dense(units=2160, activation='tanh')) # hidden layer 1080 neurons
+        self.model.add(Dense(units=1080, activation='tanh')) # hidden layer 720 neurons
+        self.model.add(Dense(units=1440, activation='tanh')) # hidden layer 1080 neurons
         self.model.add(Dense(units=2160, activation='tanh')) # hidden layer 1440 neurons
         self.model.add(Dense(units=3240, activation='tanh')) # hidden layer 2160 neurons
-        self.model.add(Dense(units=4320, activation='tanh')) # hidden layer 3240 neurons
-        self.model.add(Dense(units=4320, activation='tanh')) # hidden layer 4320 neurons
-        self.model.add(Dense(units=4320, activation='tanh')) # hidden layer 3240 neurons
-        self.model.add(Dense(units=3240, activation='tanh')) # hidden layer 2160 neurons
         self.model.add(Dense(units=2160, activation='tanh')) # hidden layer 1440 neurons
-        self.model.add(Dense(units=2160, activation='tanh')) # hidden layer 1080 neurons
-        self.model.add(Dense(units=1440, activation='tanh')) # hidden layer 720 neurons
+        self.model.add(Dense(units=1440, activation='tanh')) # hidden layer 1080 neurons
+        self.model.add(Dense(units=1080, activation='tanh')) # hidden layer 720 neurons
         self.model.add(Dense(units=4)) # theta1, theta2, theta3, theta4 -> output layer
 
         # todo: add early stopping
-        early_stopping = EarlyStopping(monitor='val_loss', patience=20)
+        early_stopping = EarlyStopping(monitor='val_loss', patience=10)
 
         self.model.compile(optimizer = Adam(learning_rate=1.0e-6), loss='mse')
         self.model.fit(data_in, data_out, validation_data=(data_test_in, data_test_out), epochs=epochs, callbacks=[early_stopping]) # callbacks = [model_check]
 
     def predict_ik(self, position):
-        return self.model.predict(position)
+        position_scaled = self.data_skaler.fit_transform(np.array(position))
+        predictions = self.model.predict(position_scaled)
+        # return self.data_skaler.inverse_transform(predictions) # ???
+        return predictions
 
     def load_model(self, model_h5):
         self.model = load_model(model_h5)
@@ -295,22 +294,3 @@ class InverseKinematics:
             return None
         
         raise Exception('Unknown method!')
-
-
-# Abstract class way
-'''
-from abc import abstractclassmethod, ABCMeta
-
-class InverseKinematicsBase(metaclass=ABCMeta):
-    @abstractclassmethod
-    def ikine(self, dest_point):
-        pass
-
-class IKineFabric(InverseKinematicsBase):
-    def ikine(self, dest_point):
-        pass
-
-class IKineANN(InverseKinematicsBase):
-    def ikine(self, dest_point):
-        pass
-'''
