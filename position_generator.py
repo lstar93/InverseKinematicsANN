@@ -5,6 +5,15 @@ from math import sin, cos
 from plot import *
 from sklearn.preprocessing import minmax_scale
 
+from scipy.stats import truncnorm
+import random as rand
+
+def transpose(data):
+    return list(map(list, zip(*data))) # transpose [[x,y,z], ...] into columns [[x,...], [y,...], [z,...]] 
+
+def get_truncated_normal_distribution(mean=0, sd=1, low=0, upp=10):
+    return truncnorm((low - mean) / sd, (upp - mean) / sd, loc=mean, scale=sd)
+
 # Generate learn data for ANN
 class RoboarmTrainingDataGenerator:
     
@@ -44,11 +53,29 @@ class RoboarmTrainingDataGenerator:
 
     # Random normal distribution with scaler
     @staticmethod
-    def random(no_of_samples, limits=(0,1)):
-        return minmax_scale(np.random.randn(no_of_samples, 3), limits)
+    def random(no_of_samples, limits={'x':[0,1], 'y':[0,1], 'z':[0,1]}):
+        pts = lambda axis: minmax_scale(np.random.randn(no_of_samples), limits[axis])
+        return [[x,y,z] for x,y,z in zip(pts('x'), pts('y'), pts('z'))]
 
     # Random normal distribution with scaler (generator)
     # @staticmethod
     # def random_gen(no_of_samples, limits=(0,1)):
     #    for _ in range(no_of_samples):
-    #        yield minmax_scale(np.random.randn(3), limits).tolist()\
+    #        yield minmax_scale(np.random.randn(3), limits).tolist()
+
+    # Ransom trajectory
+    @staticmethod
+    def random(no_of_samples, limits, distribution = 'normal'):
+        positions = [] # output samples -> angles
+        for _, limitv in limits.items():
+            if distribution == 'normal':
+                val = list(get_truncated_normal_distribution(mean=0, sd=0.5, low=limitv[0], upp=limitv[1]).rvs(no_of_samples))
+                positions.append(val)
+            elif distribution == 'uniform':
+                positions.append([rand.uniform(*limitv) for x in range(no_of_samples)])
+            elif distribution == 'random':
+                # just random shuffled data
+                arr = np.linspace(limitv[0],limitv[1],no_of_samples)
+                np.random.shuffle(arr)
+                positions.append(arr)
+        return transpose(positions)
