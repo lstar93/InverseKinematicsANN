@@ -52,7 +52,7 @@ if __name__ == '__main__':
 	# print(len(positions_samples))
 	# print(np.array(positions_samples).shape)
 	# positions_samples = RoboarmTrainingDataGenerator.random(20000, limits=effector_workspace_limits)
-	# positions_samples = RoboarmTrainingDataGenerator.random(no_of_samples = 50000, limits = effector_workspace_limits, distribution='random')
+	# positions_samples = RoboarmTrainingDataGenerator.random_distribution(no_of_samples = 50000, limits = effector_workspace_limits, distribution='random')
 	# angles_features = [ikine.ikine('FABRIK', pos) for pos in positions_samples] # use FABRIK to prepare train/test features
 
 	# train model using generated dataset
@@ -61,24 +61,25 @@ if __name__ == '__main__':
 	# ann.fit_trainig_data(positions_samples, angles_features)
 
 	# use existing model
-	ann.load_model('roboarm_model_1671540494-834831.h5')
+	ann.load_model('roboarm_model_1672332006-446743.h5')
 
 	### TEST MODEL
 
 	# test trajectory data
-	# test_shape = [3, 3, 3]
-	# test_samples_test = RoboarmTrainingDataGenerator.cube(1, *test_shape)
-	# plot_list_points_cloud(test_samples_test)
+	test_shape = [3, 3, 3]
+	test_samples_test = RoboarmTrainingDataGenerator.cube(1, *test_shape)
+	plot_points_3d(test_samples_test)
 
 	# test trajectory using circle
 	# radius = 5
 	# no_of_samples = 100
 	# centre = [1,3,1]
 	# test_samples_test = RoboarmTrainingDataGenerator.circle(radius, no_of_samples, centre)
-	# plot_list_points_cloud(test_samples_test)
+	# plot_points_3d(test_samples_test)
 
-	test_samples_test = RoboarmTrainingDataGenerator.random(5, limits=effector_workspace_limits)
-	plot_points_3d(test_samples_test)
+	# test_samples_test = RoboarmTrainingDataGenerator.random(5, limits=effector_workspace_limits)
+	# plot_points_3d(test_samples_test)
+	# print(list(test_samples_test))
 
 	# predict positions on generated data
 	predicted_points = []
@@ -91,7 +92,9 @@ if __name__ == '__main__':
 		predicted_points.append([fk[0,3], fk[1,3], fk[2,3]])
 
 	# print/plot predicted points
-	plot_points_3d(predicted_points, path=True)
+	plot_points_3d(predicted_points, path=False)
+	print(list(predicted_points))
+
 	# print(len(predicted_points))
 	# print(np.array(predicted_points).shape)
 	# print('predicted: ' + str(predicted_points))

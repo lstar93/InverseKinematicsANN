@@ -63,9 +63,9 @@ class RoboarmTrainingDataGenerator:
     #    for _ in range(no_of_samples):
     #        yield minmax_scale(np.random.randn(3), limits).tolist()
 
-    # Ransom trajectory
+    # Random trajectory
     @staticmethod
-    def random(no_of_samples, limits, distribution = 'normal'):
+    def random_distribution(no_of_samples, limits, distribution = 'normal'):
         positions = [] # output samples -> angles
         for _, limitv in limits.items():
             if distribution == 'normal':
@@ -75,7 +75,7 @@ class RoboarmTrainingDataGenerator:
                 positions.append([rand.uniform(*limitv) for x in range(no_of_samples)])
             elif distribution == 'random':
                 # just random shuffled data
-                arr = np.linspace(limitv[0],limitv[1],no_of_samples)
+                arr = np.linspace(limitv[0], limitv[1], no_of_samples)
                 np.random.shuffle(arr)
                 positions.append(arr)
         return transpose(positions)
