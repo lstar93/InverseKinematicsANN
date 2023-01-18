@@ -71,22 +71,22 @@ class ForwardKinematics:
         else:
             raise Exception('Unknown axis name, only x, y or z are supported')
 
-        # if size of robot features is greater that rotation matrix shape make rotation matrix part of identity matrix 
-        # beginning from the first element
+        # if size of robot features is bigger that rotation matrix shape
+        # make rotation matrix part of identity matrix beginning from the first element
         if self.dh_features_size == rot_mtx.shape[0]:
             return rot_axis
         identity_of_size = np.identity(self.dh_features_size)
         identity_of_size[0:rot_mtx.shape[0], 0:rot_mtx.shape[0]] = rot_mtx
         return identity_of_size
 
-    # translation -> move axis by [x,y,z] vector 
+    # translation -> move axis by [x,y,z] vector
     # vect = translation vector
     def translation_matrix(self, vect, axis='', angle=0):
         # rtm -> rotation matrix, 4x4 identity matrix if no angle given to just move matrix in 3D space
         rtm = np.identity(self.dh_features_size) if not axis else self.rotation_matrix(axis, angle)
         # repalce first 3 elems of matrix last column with translated vector x to move matrix by [x,y,z] vector in 3D space
-        for x in range(len(vect)):
-            rtm[x,len(vect)] = vect[x] 
+        for index, _ in enumerate(vect):
+            rtm[index, len(vect)] = vect[index]
         return rtm
 
     # DH_i-1_i = Rt(Z, Oi) * Tr([0, 0, Ei]^T) * Tr([ai, 0, 0]^T) * Rt(X, Li)

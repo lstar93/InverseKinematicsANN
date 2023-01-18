@@ -1,4 +1,5 @@
 *.h5
+*.bin
 joint_controller.py
 __pycache__
 gentest.py

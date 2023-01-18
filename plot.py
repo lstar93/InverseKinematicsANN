@@ -1,7 +1,7 @@
 #!/bin/python3
 import numpy.matlib
 
-from mpl_toolkits.mplot3d import Axes3D # <--- This is important for 3d plotting 
+from mpl_toolkits.mplot3d import Axes3D # <--- This is important for 3d plotting
 import matplotlib.pyplot as plt
 
 # helper metho to generate figure, colors and labels
@@ -11,7 +11,7 @@ def figure(points):
     ax.set_xlabel('X')
     ax.set_ylabel('Y')
     ax.set_zlabel('Z')
-    colors = [list(x) for x in numpy.random.rand(len(points),3)]  
+    colors = [list(x) for x in numpy.random.rand(len(points),3)]
     return fig, ax, colors
 
 def plot_points_3d(points, path=False):
