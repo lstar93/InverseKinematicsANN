@@ -1,34 +1,34 @@
-#!/bin/python3
+""" Planar robot inverse kinematics  """
+#!/usr/bin/env python
 
-from keras.models import load_model, Sequential
-from keras.optimizers import Adam
-from keras.layers import Dense
-from keras.callbacks import EarlyStopping
+# pylint: disable=W0511 # suppress TODOs
+
 from datetime import datetime
 from math import pi, sqrt, atan2, acos
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import MinMaxScaler
-from forward_kinematics import ForwardKinematics
-
+from joblib import dump, load
 import numpy as np
+from keras.models import load_model, Sequential
+from keras.optimizers import Adam
+from keras.layers import Dense, Input
+from keras.callbacks import EarlyStopping
+from keras import activations
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from forward_kinematics import ForwardKinematics
 
 # supress printing enormous small numbers like 0.123e-16
 np.set_printoptions(suppress=True)
 
 # Keep some prints, but show them only if necessary
 VERBOSE = False
-def PRINT_MSG(msg, verbose=VERBOSE):
+def print_debug_msg(msg, verbose=VERBOSE):
+    """ Debug printer """
     if verbose:
         print(msg)
 
-def pow(arg, p):
-    return float(arg ** p)
 
 class Point:
-    x = 0.0
-    y = 0.0
-    z = 0.0
-
+    """ 3D point representation"""
     def __init__(self, xyz):
         self.x, self.y, self.z = xyz
 
@@ -39,33 +39,35 @@ class Point:
         return str(self)
 
     def to_list(self):
+        """ 3D point to python list """
         return [self.x, self.y, self.z]
 
-# calculate distance between two points
+
 def get_distance_between(point_a, point_b):
+    """ Compute distance between two points """
     return sqrt(pow((point_a.x - point_b.x), 2) + pow((point_a.y - point_b.y), 2) + pow((point_a.z - point_b.z), 2))
 
-# calculate coordinates of Point between two other points or coordinates of point in given distance from other point
 def get_point_between(start_point, end_point, distance):
-    coord_lambda = lambda start_point_axis, end_point_axis: start_point_axis + ((distance/get_distance_between(start_point, end_point))*(end_point_axis - start_point_axis))
-    rx = coord_lambda(start_point.x, end_point.x)
-    ry = coord_lambda(start_point.y, end_point.y)
-    rz = coord_lambda(start_point.z, end_point.z)
-    return Point([rx, ry, rz])
+    """ Compute coordinates of Point between two other points \
+            or coordinates of point in given distance from other point """
+    def coords(start_point_axis, end_point_axis):
+        return start_point_axis + ((distance/get_distance_between(start_point, end_point))*(end_point_axis - start_point_axis))
+    return Point([coords(start_point.x, end_point.x), coords(start_point.y, end_point.y), coords(start_point.z, end_point.z)])
 
-# FABRIK stands from forward and backward reaching inverse kinematics -> https://www.youtube.com/watch?v=UNoX65PRehA&feature=emb_title
+
 class Fabrik:
-
+    """ FABRIK stands from forward and backward reaching inverse kinematics ->\
+            https://www.youtube.com/watch?v=UNoX65PRehA&feature=emb_title """
     def __init__(self, init_joints_positions, joint_distances, err_margin = 0.001, max_iter_num = 100):
         self.joint_distances = joint_distances
         self.init_joints_positions = init_joints_positions
         self.err_margin = err_margin
         self.max_iter_num = max_iter_num
-        
+
     # Compute backward iteration
     def backward(self, points, goal_point):
-        # Compute backward joint positions -> from goal position to point close to the start joint
-        # Backward iteration omit last joint and begins computations from goal_point
+        """ Compute backward joint positions -> \
+            from goal position to point close to the start joint """
         points_to_ret = [goal_point] # goal point should be the last point in array
         positions = list(reversed(points[:-1]))
         distances = list(reversed(self.joint_distances[:-1]))
@@ -75,8 +77,8 @@ class Fabrik:
 
     # Compute forward iteration
     def forward(self, points, start_point):
-        # Compute forward joint positions -> from start position to point close to the goal position
-        # Forward iteration omit first joint and begins computations from start_point
+        """ Calculate forward joint positions -> \
+            from start position to point close to the goal position """
         points_to_ret = [start_point] # start point should be the first point in array
         positions = points[1:]
         distances = self.joint_distances[1:]
@@ -84,13 +86,12 @@ class Fabrik:
             points_to_ret.append(get_point_between(points_to_ret[-1], next_point, distance))
         return points_to_ret
 
-    # compute all joints positions joining backward and forward methods
-    def compute(self, goal_eff_pos):
+    def calculate(self, goal_eff_pos):
+        """ Calculate all joints positions joining backward and forward methods """
         if not all(x == len(self.init_joints_positions) for x in (len(self.init_joints_positions), len(self.joint_distances))):
             raise Exception('Input vectors should have equal lengths!')
 
         current_join_positions = self.init_joints_positions
-        # goal_joints_positions = []
         start_point = self.init_joints_positions[0]
         goal_point = Point([x for x in goal_eff_pos])
         start_error = 1
@@ -103,82 +104,102 @@ class Fabrik:
             forward = self.forward(backward, start_point)
             goal_error = get_distance_between(forward[-1], goal_point)
             current_join_positions = forward
-            # goal_joints_positions = current_join_positions
-            PRINT_MSG('Iteration {} -> start position error = {}, goal position error = {}'.format(step, start_error, goal_error))
+            print_debug_msg(f'Iteration {step} -> start position error = {start_error}, '\
+                        'goal position error = {goal_error}')
             step += 1
 
         return current_join_positions
 
-# neural network IK approach
+
 class ANN:
+    """ ANN class to neural network IK approach """
     def __init__(self, effector_workspace_limits, dh_matrix):
         self.effector_workspace_limits = effector_workspace_limits
         self.dh_matrix = dh_matrix
         self.model = Sequential()
-        self.data_skaler = MinMaxScaler()
+        self.x_data_skaler = StandardScaler()
+        self.y_data_skaler = StandardScaler()
 
-    # fit trainig data
     def fit_trainig_data(self, samples, features):
-        # split data into training (70%), test and evaluation (30%)
-        input, input_test_eval, output, output_test_eval = train_test_split(samples, features, test_size=0.33, random_state=105)
+        """ Split training/test (70/30) data and use MinMaxScaler to scale it """
+        x_train, x_test, y_train, y_test = \
+            train_test_split(samples, features, test_size=0.33, random_state=42)
 
-        # fit data using scaler
-        input_scaled = self.data_skaler.fit_transform(input)
-        input_test_scaled = self.data_skaler.transform(input_test_eval)
+        x_train = self.x_data_skaler.fit_transform(x_train)
+        x_test = self.x_data_skaler.transform(x_test)
 
-        return np.array(input_scaled), np.array(output), np.array(input_test_scaled), np.array(output_test_eval)
+        y_train = self.y_data_skaler.fit_transform(y_train)
+        y_test = self.y_data_skaler.transform(y_test)
 
-    # mse custom loss function
-    # def customloss(self, yTrue, yPred, no_of_samples):
-    #     return (keras.backend.sum((yTrue - yPred)**2))/no_of_samples
+        return np.array(x_train), np.array(y_train), np.array(x_test), np.array(y_test)
 
     def train_model(self, epochs, samples, features):
+        """ Train ANN Sequential model """
         data_in, data_out, data_test_in, data_test_out = self.fit_trainig_data(samples, features)
 
-        # self.model.add(keras.layers.Dense(units=3, activation='tanh')) # x, y, z -> input layer
-        self.model.add(Dense(units=1080, activation='tanh')) # hidden layer 720 neurons
-        self.model.add(Dense(units=1440, activation='tanh')) # hidden layer 1080 neurons
-        self.model.add(Dense(units=2160, activation='tanh')) # hidden layer 1440 neurons
-        self.model.add(Dense(units=3240, activation='tanh')) # hidden layer 2160 neurons
-        self.model.add(Dense(units=2160, activation='tanh')) # hidden layer 1440 neurons
-        self.model.add(Dense(units=1440, activation='tanh')) # hidden layer 1080 neurons
-        self.model.add(Dense(units=1080, activation='tanh')) # hidden layer 720 neurons
+        self.model.add(Input(shape=(3,))) # Input layer, 3 input variables
+
+        net_shape = [
+                (12, 500, activations.tanh)
+            ]
+
+        for shape in net_shape:
+            for _ in range(shape[0]):
+                self.model.add(Dense(units=shape[1], activation=shape[2])) # hidden layer
+
         self.model.add(Dense(units=4)) # theta1, theta2, theta3, theta4 -> output layer
 
-        # todo: add early stopping
-        early_stopping = EarlyStopping(monitor='val_loss', patience=10)
+        early_stopping = EarlyStopping(monitor='val_loss', patience=12, restore_best_weights=True)
 
-        self.model.compile(optimizer = Adam(learning_rate=1.0e-6), loss='mse')
-        self.model.fit(data_in, data_out, validation_data=(data_test_in, data_test_out), epochs=epochs, callbacks=[early_stopping]) # callbacks = [model_check]
+        self.model.compile(optimizer = Adam(learning_rate=1.0e-5), loss='mse')
+
+        self.model.fit(
+                        data_in, data_out,
+                        validation_data = (data_test_in, data_test_out),
+                        epochs = epochs,
+                        callbacks = [early_stopping],
+                        # batch_size=64
+                      )
 
     def predict_ik(self, position):
-        position_scaled = self.data_skaler.fit_transform(np.array(position))
-        predictions = self.model.predict(position_scaled)
-        # return self.data_skaler.inverse_transform(predictions) # ???
+        """ Use trained ANN to predict joint angles """
+        predictions = self.y_data_skaler.inverse_transform(
+            self.model.predict(self.x_data_skaler.transform(position))
+        )
+
         return predictions
 
     def load_model(self, model_h5):
+        """ Load model from file """
         self.model = load_model(model_h5)
+        modelname = model_h5[:-3]
+        # load scalers for this model
+        self.x_data_skaler = load(f'{modelname}_scaler_x.bin')
+        self.y_data_skaler = load(f'{modelname}_scaler_y.bin')
         return self.model
 
     def save_model(self):
-        dt = datetime.now()
+        """ Save model to file """
+        date_now = datetime.now()
         # replace . with - in filename to look better
-        ts_str = str(datetime.timestamp(dt)).replace('.','-')
-        self.model.save('roboarm_model_'+ts_str+'.h5')
+        timestamp_str = str(datetime.timestamp(date_now)).replace('.','-')
+        self.model.save(f'roboarm_model_{timestamp_str}.h5')
+        # save scalers
+        dump(self.x_data_skaler, f'roboarm_model_{timestamp_str}_scaler_x.bin', compress=True)
+        dump(self.y_data_skaler, f'roboarm_model_{timestamp_str}_scaler_y.bin', compress=True)
 
-# Robo Arm inverse kinematics class
+
 class InverseKinematics:
-
+    """ Inverse kinematics class """
     def __init__(self, dh_matrix, joints_lengths, workspace_limits):
         self.dh_matrix = dh_matrix
         self.joints_lengths = joints_lengths
         self.workspace_limits = workspace_limits
+        self.ann = ANN(self.workspace_limits, self.dh_matrix)
         # self.first_rev_joint_point = Point([0,0,dh_matrix[0]])
 
-    # Compute angles from cosine theorem
-    # IMPORTANT: function works only for RoboArm manipulator and FABRIK method!
     def fabrik_ik(self, goal_point):
+        """ Calculate angles from cosine theorem """
         A = Point([0, 0, 0])
         B = Point([goal_point[0].x, goal_point[0].y, goal_point[0].z])
         C = Point([goal_point[1].x, goal_point[1].y, goal_point[1].z])
@@ -194,24 +215,11 @@ class InverseKinematics:
         DE = get_distance_between(D, E)
         # todo: n-th distance
 
-        # theta_1 is horizontal angle and is calculated from arcus tangens 
+        # theta_1 is horizontal angle and is calculated from arcus tangens
         # ensures that arm is faced into goal point direction
-        ''' view from above
-        y
-        /\     
-        |        * gp(x,y)
-        |  
-        |    |__|
-        |     /
-        |    /
-        | _ /
-        |  /|
-        | / |
-        ----------------------> x
-        '''
         theta_1 = float(atan2(goal_point[3].y, goal_point[3].x))
 
-        # theta_2/3/4 are vertical angles, they are responsible for 
+        # theta_2/3/4 are vertical angles, they are responsible for
         # raching goal point vertically
         # traingles are used just to plot arm later with matplotlib
 
@@ -249,30 +257,18 @@ class InverseKinematics:
             theta_4 = theta_4 * -1
 
         # todo: n-th triangle
-        # ...
 
         return [theta_1, theta_2, theta_3, theta_4], [base, first_triangle, second_triangle, third_triangle]
 
-    def ann_train_model(self, epochs, samples, features):
-        self.ann = ANN(self.workspace_limits, self.dh_matrix)
-        self.ann.train_model(epochs=epochs, input_train_data=samples, output_train_data=features) # random data
-
-    def ann_ik(self, goal_point, train=False, model_path=None):
-        ann = ANN(self.workspace_limits, self.dh_matrix)
-        if train:
-            ann = ANN(self.workspace_limits, self.dh_matrix)
-        else:
-            ann.load_model(model_path)
-
     # use one of methods to compute inverse kinematics
     def ikine(self, method, dest_point, max_err = 0.001, max_iterations_num = 100):
-
+        """ Calculate inverse kinematics """
         # Effector limits check
         if any(dp < limitv[1][0] or dp > limitv[1][1] for dp, limitv in zip(dest_point, self.workspace_limits.items())):
-            raise Exception("Point is out of RoboArm reach area! Limits: {}, ".format(self.workspace_limits))
+            raise Exception(f'Point {dest_point} is out of RoboArm reach area! Limits: {self.workspace_limits}')
 
         if method.lower() == "fabrik":
-            # FABRIK 
+            # FABRIK
             theta_1 = float(atan2(dest_point[1], dest_point[0])) # compute theta_1 to omit horizontal move in FABRIK
             self.dh_matrix[0][0] = theta_1 # replace initial theta_1
 
@@ -283,14 +279,21 @@ class InverseKinematics:
 
             # Compute joint positions using FABRIK
             fab = Fabrik(init_joints_positions, self.joints_lengths, max_err, max_iterations_num)
-            goal_joints_positions = fab.compute(dest_point)
+            goal_joints_positions = fab.calculate(dest_point)
 
             # Compute roboarm angles from FABRIK computed positions
             ik_angles, _ = self.fabrik_ik(goal_joints_positions)
-        
+
             return ik_angles
 
         elif method.lower() == "ann":
             return None
-        
+
         raise Exception('Unknown method!')
+
+
+class FabrikInverseKinematics(InverseKinematics):
+    """ Reaching inverse kinematics using Fabrik method """
+
+class AnnInverseKinematics(InverseKinematics):
+    """ reaching inverse kinematics using Artificial NN method """
