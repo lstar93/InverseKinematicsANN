@@ -8,7 +8,6 @@ from keras.models import load_model, Sequential
 from keras.optimizers import Adam
 from keras.layers import Dense, Input
 from keras.callbacks import EarlyStopping
-from keras.metrics import Accuracy
 from keras import activations
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
@@ -24,6 +23,7 @@ def print_debug_msg(msg, verbose=VERBOSE):
     if verbose:
         print(msg)
 
+
 class Point:
     """ 3D point object representation """
     def __init__(self, xyz):
@@ -38,6 +38,7 @@ class Point:
     def to_list(self):
         """ 3D point to python list """
         return [self.x, self.y, self.z]
+
 
 def get_distance_between(point_a, point_b):
     """ Compute distance between two points """
@@ -108,9 +109,9 @@ class Fabrik:
 
         return current_join_positions
 
-# neural network IK approach
+
 class ANN:
-    """ ANN class """
+    """ ANN class to neural network IK approach """
     def __init__(self, effector_workspace_limits, dh_matrix):
         self.effector_workspace_limits = effector_workspace_limits
         self.dh_matrix = dh_matrix
@@ -118,15 +119,10 @@ class ANN:
         self.x_data_skaler = StandardScaler()
         self.y_data_skaler = StandardScaler()
 
-    # fit trainig data
     def fit_trainig_data(self, samples, features):
         """ Split training/test (70/30) data and use MinMaxScaler to scale it """
         x_train, x_test, y_train, y_test = \
             train_test_split(samples, features, test_size=0.33, random_state=42)
-
-        # fit data using scaler
-        # x_train = self.data_skaler.fit_transform(x_train)
-        # x_test = self.data_skaler.transform(x_test)
 
         x_train = self.x_data_skaler.fit_transform(x_train)
         x_test = self.x_data_skaler.transform(x_test)
@@ -143,7 +139,7 @@ class ANN:
         self.model.add(Input(shape=(3,))) # Input layer, 3 input variables
 
         net_shape = [
-                (10, 500, activations.tanh)
+                (10, 1500, activations.tanh)
             ]
 
         for shape in net_shape:
@@ -164,14 +160,8 @@ class ANN:
                         # batch_size=64
                       )
 
-        return data_in, data_out, data_test_in, data_test_out
-
     def predict_ik(self, position):
         """ Use trained ANN to predict joint angles """
-        # arraynp = np.array(position)
-        # position_scaled = self.data_skaler.fit_transform(arraynp)
-        # predictions = self.model.predict(position_scaled)
-
         predictions = self.y_data_skaler.inverse_transform(
             self.model.predict(self.x_data_skaler.transform(position))
         )
@@ -197,10 +187,9 @@ class ANN:
         dump(self.x_data_skaler, f'roboarm_model_{timestamp_str}_scaler_x.bin', compress=True)
         dump(self.y_data_skaler, f'roboarm_model_{timestamp_str}_scaler_y.bin', compress=True)
 
-# Robo Arm inverse kinematics class
+
 class InverseKinematics:
     """ Inverse kinematics class """
-
     def __init__(self, dh_matrix, joints_lengths, workspace_limits):
         self.dh_matrix = dh_matrix
         self.joints_lengths = joints_lengths
@@ -270,17 +259,6 @@ class InverseKinematics:
 
         return [theta_1, theta_2, theta_3, theta_4], [base, first_triangle, second_triangle, third_triangle]
 
-    def ann_train_model(self, epochs, samples, features):
-        """ Train ANN model """
-        self.ann.train_model(epochs = epochs, samples = samples, features = features) # random data
-
-    # def ann_ik(self, goal_point, train=False, model_path=None):
-    #     ann = ANN(self.workspace_limits, self.dh_matrix)
-    #     if train:
-    #         ann = ANN(self.workspace_limits, self.dh_matrix)
-    #     else:
-    #       ann.load_model(model_path)
-
     # use one of methods to compute inverse kinematics
     def ikine(self, method, dest_point, max_err = 0.001, max_iterations_num = 100):
         """ Calculate inverse kinematics """
@@ -311,3 +289,10 @@ class InverseKinematics:
             return None
 
         raise Exception('Unknown method!')
+
+
+class FabrikInverseKinematics(InverseKinematics):
+    """ Reaching inverse kinematics using Fabrik method """
+
+class AnnInverseKinematics(InverseKinematics):
+    """ reaching inverse kinematics using Artificial NN method """

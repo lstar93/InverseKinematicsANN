@@ -21,11 +21,12 @@ TODO:
 3. add CSV positions handling via CLI
 '''
 
-from position_generator import *
-from forward_kinematics import *
-from inverse_kinematics import *
+from math import pi
+import numpy as np
+from forward_kinematics import ForwardKinematics
+from inverse_kinematics import InverseKinematics, ANN
 from plot import *
-from position_generator import CubeDataGenerator
+from position_generator import CubeDataGenerator, RoboarmTrainingDataGenerator
 import sys
 
 def predict(ann, fkine, test_samples_test, separate_predictions=False, plot=False):
@@ -76,7 +77,7 @@ if __name__ == '__main__':
 	positions_samples_1 = RoboarmTrainingDataGenerator.random(15000, limits=effector_workspace_limits)
 	# plot_points_3d(positions_samples)
 
-	positions_samples_2 = RoboarmTrainingDataGenerator.random_distribution(no_of_samples = 15000, limits = effector_workspace_limits, distribution='normal', sd=0.33)
+	positions_samples_2 = RoboarmTrainingDataGenerator.random_distribution(no_of_samples = 15000, limits = effector_workspace_limits, distribution='normal', std_dev=0.33)
 	# plot_points_3d(positions_samples)
 
 	positions_samples = []
@@ -98,7 +99,8 @@ if __name__ == '__main__':
 	# train model using generated dataset
 	epochs = 1000
 	ann.train_model(epochs, positions_samples, angles_features) # random data
-	# ann.train_model(epochs=epochs, samples=[], features=[], generator=CubeDataGenerator(ikine=ikine, limits=effector_workspace_limits, shape=[5,5,5], step=0.1, batch_size=64)) # random data
+	# gen = CubeDataGenerator(ikine, RoboarmTrainingDataGenerator.cube_random_gen(0.01, 5, 12, 6, (1,-6,0)), 15000, 64)
+	# ann.train_model(epochs=1000, features=[], samples=[], generator=gen) # random data
 
 	# use existing model
 	# ann.load_model('roboarm_model_1673989748-812473.h5')
