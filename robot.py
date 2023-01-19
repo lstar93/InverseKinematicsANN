@@ -141,7 +141,9 @@ if __name__ == '__main__':
     plot_joint_points_3d(predicted, test_sample, True)
 
     # save exceptional models
-    # ann.save_model()
+    response = input('Save this model? [y/n]:')
+    if response == 'y':
+        ann.save_model()
 
     # except Exception as e:
     #     print(str(e))
