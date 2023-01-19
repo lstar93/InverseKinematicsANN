@@ -1,4 +1,7 @@
-#!/bin/python3
+""" Planar robot inverse kinematics  """
+#!/usr/bin/env python
+
+# pylint: disable=W0511 # suppress TODOs
 
 from datetime import datetime
 from math import pi, sqrt, atan2, acos

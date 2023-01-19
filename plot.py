@@ -1,25 +1,28 @@
-#!/bin/python3
-import numpy.matlib
+""" Plotters for robot environment """
+#!/usr/bin/env python
 
-from mpl_toolkits.mplot3d import Axes3D # <--- This is important for 3d plotting
+import numpy.matlib
+# from mpl_toolkits.mplot3d import Axes3D # <--- This is important for 3d plotting ??? is it?
 import matplotlib.pyplot as plt
 
 # helper metho to generate figure, colors and labels
 def figure(points):
     """ Create 3D figure """
     fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
-    ax.set_xlabel('X')
-    ax.set_ylabel('Y')
-    ax.set_zlabel('Z')
-    colors = [list(x) for x in numpy.random.rand(len(points),3)]
-    return fig, ax, colors
+    axes = fig.add_subplot(111, projection='3d')
+    axes.set_xlabel('X')
+    axes.set_ylabel('Y')
+    axes.set_zlabel('Z')
+    colors = [list(x) for x in numpy.random.rand(len(points), 3)]
+    return fig, axes, colors
 
 def plot_points_3d(points, path=False):
     """ Plot poits cloud in 3D space """
     points = list(points)
     _, axes, colors = figure(points)
-    rounded_points = [round(axes[0], 1), round(axes[1], 1), round(axes[2], 1)]
+
+    round_pts = lambda ax: [round(x[ax], 1) for x in points]
+    rounded_points = [round_pts(0), round_pts(1), round_pts(2)]
 
     # add scatter plot for points
     for axe_x, axe_y, axe_z, color in zip(*rounded_points, colors):

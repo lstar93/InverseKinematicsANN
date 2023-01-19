@@ -2,5 +2,5 @@
 *.bin
 joint_controller.py
 __pycache__
-gentest.py
+test.py
 unit_tests.py

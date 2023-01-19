@@ -1,4 +1,7 @@
-#!/bin/python3
+""" Plotters for robot environment """
+#!/usr/bin/env python
+
+# pylint: disable=W0511 # supress TODOs
 
 from math import sin, cos
 import random as rand
@@ -24,15 +27,15 @@ class RoboarmTrainingDataGenerator:
     @staticmethod
     def circle(radius, no_of_samples, centre):
         """ Circle shape """
-        def generate_shape(period):
-            return [centre[0], centre[1] * sin(period), centre[2] + radius*cos(period)]
+        def generate_shape(tstamp):
+            return [centre[0], centre[1] * sin(tstamp), centre[2] + radius*cos(tstamp)]
         return [generate_shape(t) for t in range(no_of_samples)]
 
     @staticmethod
     def circle_gen(radius, no_of_samples, centre):
         """ Circle shape generator """
-        for t in range(no_of_samples):
-            yield [centre[0], centre[1] * sin(t), centre[2] + radius*cos(t)]
+        for tstamp in range(no_of_samples):
+            yield [centre[0], centre[1] * sin(tstamp), centre[2] + radius*cos(tstamp)]
 
     @staticmethod
     def cube(step, len_x, len_y, len_z, start=(0,0,0)):
@@ -95,7 +98,7 @@ class RoboarmTrainingDataGenerator:
                 positions.append(arr)
         return transpose(positions)
 
-
+# TODO: check generator unexpected exchaustion
 class CubeDataGenerator(keras.utils.Sequence):
     """ Cube generator class for keras fit method """
     def __init__(self, ikine, generator, datalen, batch_size):
