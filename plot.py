@@ -34,6 +34,30 @@ def plot_points_3d(points, path=False):
 
     plt.show()
 
+def plot_joint_points_3d(points_first, points_sec, path=False):
+    """ Plot poits clouds in 3D space """
+    points_0 = list(points_first)
+    points_1 = list(points_sec)
+    _, axes, colors = figure(points_0+points_1)
+
+    round_pts = lambda ax, pts: [round(x[ax], 1) for x in pts]
+    rounded_points_0 = [round_pts(0, points_0), round_pts(1, points_0), round_pts(2, points_0)]
+    rounded_points_1 = [round_pts(0, points_1), round_pts(1, points_1), round_pts(2, points_1)]
+
+    # add scatter plot for points
+    for axe_x, axe_y, axe_z, _ in zip(*rounded_points_0, colors):
+        axes.scatter(axe_x, axe_y, axe_z, color='r')
+
+    for axe_x, axe_y, axe_z, _ in zip(*rounded_points_1, colors):
+        axes.scatter(axe_x, axe_y, axe_z, color='b')
+
+    # optionally add path connecting points
+    if path:
+        axes.plot(*rounded_points_0, color='r')
+        axes.plot(*rounded_points_1, color='b')
+
+    plt.show()
+
 # matplotlib cannot resize all axes to the same scale so very small numbers make plots impossible to
 # thus all very small numbers will be rounded to 0 for plotting purposes only
 def plot_robot(joints, points = None):

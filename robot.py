@@ -30,7 +30,7 @@ import sys
 import numpy as np
 from forward_kinematics import ForwardKinematics
 from inverse_kinematics import InverseKinematics, ANN
-from plot import plot_points_3d
+from plot import plot_points_3d, plot_joint_points_3d
 from position_generator import RoboarmTrainingDataGenerator
 
 def predict(test_samples_test, separate_predictions=False, plot=False):
@@ -61,7 +61,7 @@ if __name__ == '__main__':
     dh_matrix = [[0, pi/2, 0, 0], [2, 0, 0, 0], [0, 2, 2, 2], [pi/2, 0, 0, 0]]
 
     # links lengths, workspace and joints limits
-    effector_workspace_limits = {'x': [0,6], 'y': [-6,6], 'z': [0,6]} # assumed limits
+    effector_workspace_limits = {'x': [0,6], 'y': [-6,6], 'z': [-3,6]} # assumed limits
     links_lengths = [2, 2, 2, 2]
 
     # inverse kinematics engine
@@ -74,25 +74,30 @@ if __name__ == '__main__':
     ### CREATE MODEL
     ann = ANN(effector_workspace_limits, dh_matrix)
 
-    positions_samples_0 = RoboarmTrainingDataGenerator.cube_random(0.0075, 5, 12, 6, (1,-6,0))
+    positions_samples_0 = RoboarmTrainingDataGenerator.cube_random(0.0033, 5, 12, 6, (1,-6,-2))
 
-    positions_samples_1 = RoboarmTrainingDataGenerator.random(20000, limits=effector_workspace_limits)
+    positions_samples_1 = RoboarmTrainingDataGenerator.cube_random(0.0033, 6, 12, 2, (0,-6,4))
 
-    positions_samples_2 = RoboarmTrainingDataGenerator.random_distribution(
-														no_of_samples = 7500,
+    positions_samples_2 = RoboarmTrainingDataGenerator.random(20000, limits=effector_workspace_limits)
+
+    positions_samples_3 = RoboarmTrainingDataGenerator.random_distribution(
+														no_of_samples = 20000,
 														limits = effector_workspace_limits,
 														distribution='normal',
 														std_dev=0.33)
 
+    positions_samples_4 = RoboarmTrainingDataGenerator.cube_random(0.0033, 2, 12, 4, (0,-6,-2))
+
     # plot_points_3d(positions_samples)
 
     positions_samples = []
-    for first, sec, thrd in zip(positions_samples_0, positions_samples_1, positions_samples_2):
-        positions_samples.append(first)
-        positions_samples.append(sec)
-        positions_samples.append(thrd)
-
-    np.random.shuffle(positions_samples)
+    for ps0, ps1, ps2, ps3, ps4 in zip(positions_samples_0, positions_samples_1, positions_samples_2, positions_samples_3, positions_samples_4):
+        positions_samples.append(ps0)
+        positions_samples.append(ps1)
+        positions_samples.append(ps2)
+        positions_samples.append(ps3)
+        positions_samples.append(ps4)
+    # np.random.shuffle(positions_samples)
 
     for pos in positions_samples:
         for i, elem in enumerate(pos):
@@ -118,9 +123,7 @@ if __name__ == '__main__':
     test_sample = RoboarmTrainingDataGenerator.cube(0.5, *test_shape, start=(1,0,1))
     plot_points_3d(test_sample)
     predicted = predict(test_sample, True, True)
-    print(test_sample[0:10])
-    print(predicted[0:10])
-    print(np.array(test_sample[0:10]) - np.array(predicted[0:10]))
+    plot_joint_points_3d(predicted, test_sample)
 
     # test trajectory using circle
     radius = 2
@@ -129,14 +132,13 @@ if __name__ == '__main__':
     test_sample = RoboarmTrainingDataGenerator.circle(radius, no_of_samples, centre)
     plot_points_3d(test_sample)
     predicted = predict(test_sample, True, True)
-    print(test_sample[0:10])
-    print(predicted[0:10])
-    print(np.array(test_sample[0:10]) - np.array(predicted[0:10]))
+    plot_joint_points_3d(predicted, test_sample)
 
     spring_size = [2, 2, 4]
     test_sample = RoboarmTrainingDataGenerator.spring(no_of_samples, *spring_size)
     plot_points_3d(test_sample)
     predicted = predict(test_sample, True, True)
+    plot_joint_points_3d(predicted, test_sample, True)
 
     # save exceptional models
     # ann.save_model()

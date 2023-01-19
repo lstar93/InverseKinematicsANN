@@ -1,7 +1,7 @@
 """ Plotters for robot environment """
 #!/usr/bin/env python
 
-# pylint: disable=W0511 # supress TODOs
+# pylint: disable=W0511 # suppress TODOs
 
 from math import sin, cos
 import random as rand

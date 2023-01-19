@@ -22,13 +22,13 @@ np.set_printoptions(suppress=True)
 # Keep some prints, but show them only if necessary
 VERBOSE = False
 def print_debug_msg(msg, verbose=VERBOSE):
-    """ Debugging printer """
+    """ Debug printer """
     if verbose:
         print(msg)
 
 
 class Point:
-    """ 3D point object representation """
+    """ 3D point representation"""
     def __init__(self, xyz):
         self.x, self.y, self.z = xyz
 
@@ -63,7 +63,7 @@ class Fabrik:
         self.init_joints_positions = init_joints_positions
         self.err_margin = err_margin
         self.max_iter_num = max_iter_num
-        
+
     # Compute backward iteration
     def backward(self, points, goal_point):
         """ Compute backward joint positions -> \
@@ -92,7 +92,6 @@ class Fabrik:
             raise Exception('Input vectors should have equal lengths!')
 
         current_join_positions = self.init_joints_positions
-        # goal_joints_positions = []
         start_point = self.init_joints_positions[0]
         goal_point = Point([x for x in goal_eff_pos])
         start_error = 1
@@ -105,7 +104,6 @@ class Fabrik:
             forward = self.forward(backward, start_point)
             goal_error = get_distance_between(forward[-1], goal_point)
             current_join_positions = forward
-            # goal_joints_positions = current_join_positions
             print_debug_msg(f'Iteration {step} -> start position error = {start_error}, '\
                         'goal position error = {goal_error}')
             step += 1
@@ -142,7 +140,7 @@ class ANN:
         self.model.add(Input(shape=(3,))) # Input layer, 3 input variables
 
         net_shape = [
-                (10, 1500, activations.tanh)
+                (12, 500, activations.tanh)
             ]
 
         for shape in net_shape:
