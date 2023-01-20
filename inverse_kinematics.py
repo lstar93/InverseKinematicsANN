@@ -51,24 +51,31 @@ def get_point_between(start_point, end_point, distance):
     """ Compute coordinates of Point between two other points \
             or coordinates of point in given distance from other point """
     def coords(start_point_axis, end_point_axis):
-        return start_point_axis + ((distance/get_distance_between(start_point, end_point))*(end_point_axis - start_point_axis))
-    return Point([coords(start_point.x, end_point.x), coords(start_point.y, end_point.y), coords(start_point.z, end_point.z)])
+        sec = ((distance/get_distance_between(start_point, end_point))*(end_point_axis - start_point_axis))
+        return start_point_axis + sec
+    try:
+        return Point([coords(start_point.x, end_point.x),
+                    coords(start_point.y, end_point.y),
+                    coords(start_point.z, end_point.z)])
+    except Exception as exc:
+        print(f'{start_point} {str(exc)}')
 
 
 class Fabrik:
     """ FABRIK stands from forward and backward reaching inverse kinematics ->\
             https://www.youtube.com/watch?v=UNoX65PRehA&feature=emb_title """
-    def __init__(self, init_joints_positions, joint_distances, err_margin = 0.001, max_iter_num = 100):
+    def __init__(self, init_joints_positions, joint_distances, 
+                    err_margin = 0.001, max_iter_num = 100):
         self.joint_distances = joint_distances
         self.init_joints_positions = init_joints_positions
         self.err_margin = err_margin
         self.max_iter_num = max_iter_num
 
     # Compute backward iteration
-    def backward(self, points, goal_point):
+    def __backward(self, points, joints_goal_points):
         """ Compute backward joint positions -> \
             from goal position to point close to the start joint """
-        points_to_ret = [goal_point] # goal point should be the last point in array
+        points_to_ret = [joints_goal_points] # goal point should be the last point in array
         positions = list(reversed(points[:-1]))
         distances = list(reversed(self.joint_distances[:-1]))
         for next_point, distance in zip(positions, distances):
@@ -76,7 +83,7 @@ class Fabrik:
         return list(reversed(points_to_ret))
 
     # Compute forward iteration
-    def forward(self, points, start_point):
+    def __forward(self, points, start_point):
         """ Calculate forward joint positions -> \
             from start position to point close to the goal position """
         points_to_ret = [start_point] # start point should be the first point in array
@@ -88,21 +95,24 @@ class Fabrik:
 
     def calculate(self, goal_eff_pos):
         """ Calculate all joints positions joining backward and forward methods """
-        if not all(x == len(self.init_joints_positions) for x in (len(self.init_joints_positions), len(self.joint_distances))):
+        if not all(x == len(self.init_joints_positions) 
+                for x in (len(self.init_joints_positions), len(self.joint_distances))):
             raise Exception('Input vectors should have equal lengths!')
 
         current_join_positions = self.init_joints_positions
         start_point = self.init_joints_positions[0]
-        goal_point = Point([x for x in goal_eff_pos])
+        joints_goal_points = Point([x for x in goal_eff_pos])
         start_error = 1
         goal_error = 1
         step = 0
 
-        while (((start_error > self.err_margin) or (goal_error > self.err_margin)) and (self.max_iter_num > step)):
-            backward = self.backward(current_join_positions, goal_point)
+        while (((start_error > self.err_margin) 
+                or (goal_error > self.err_margin)) 
+                    and (self.max_iter_num > step)):
+            backward = self.__backward(current_join_positions, joints_goal_points)
             start_error = get_distance_between(backward[0], start_point)
-            forward = self.forward(backward, start_point)
-            goal_error = get_distance_between(forward[-1], goal_point)
+            forward = self.__forward(backward, start_point)
+            goal_error = get_distance_between(forward[-1], joints_goal_points)
             current_join_positions = forward
             print_debug_msg(f'Iteration {step} -> start position error = {start_error}, '\
                         'goal position error = {goal_error}')
@@ -120,7 +130,7 @@ class ANN:
         self.x_data_skaler = StandardScaler()
         self.y_data_skaler = StandardScaler()
 
-    def fit_trainig_data(self, samples, features):
+    def __fit_trainig_data(self, samples, features):
         """ Split training/test (70/30) data and use MinMaxScaler to scale it """
         x_train, x_test, y_train, y_test = \
             train_test_split(samples, features, test_size=0.33, random_state=42)
@@ -135,7 +145,7 @@ class ANN:
 
     def train_model(self, epochs, samples, features):
         """ Train ANN Sequential model """
-        data_in, data_out, data_test_in, data_test_out = self.fit_trainig_data(samples, features)
+        data_in, data_out, data_test_in, data_test_out = self.__fit_trainig_data(samples, features)
 
         self.model.add(Input(shape=(3,))) # Input layer, 3 input variables
 
@@ -161,7 +171,7 @@ class ANN:
                         # batch_size=64
                       )
 
-    def predict_ik(self, position):
+    def predict(self, position):
         """ Use trained ANN to predict joint angles """
         predictions = self.y_data_skaler.inverse_transform(
             self.model.predict(self.x_data_skaler.transform(position))
@@ -195,29 +205,39 @@ class InverseKinematics:
         self.dh_matrix = dh_matrix
         self.joints_lengths = joints_lengths
         self.workspace_limits = workspace_limits
-        self.ann = ANN(self.workspace_limits, self.dh_matrix)
         # self.first_rev_joint_point = Point([0,0,dh_matrix[0]])
 
-    def fabrik_ik(self, goal_point):
+    # use one of methods to compute inverse kinematics
+    def ikine(self, dest_point):
+        """ Calculate inverse kinematics """
+
+class FabrikInverseKinematics(InverseKinematics):
+    """ Reaching inverse kinematics using Fabrik method """
+    def __init__(self, dh_matrix, joints_lengths, workspace_limits,
+                 max_err = 0.001, max_iterations_num = 100):
+        super().__init__(dh_matrix, joints_lengths, workspace_limits)
+        self.max_err = max_err
+        self.max_iterations_num = max_iterations_num
+
+    def __fabrik(self, joints_goal_points):
         """ Calculate angles from cosine theorem """
-        A = Point([0, 0, 0])
-        B = Point([goal_point[0].x, goal_point[0].y, goal_point[0].z])
-        C = Point([goal_point[1].x, goal_point[1].y, goal_point[1].z])
-        D = Point([goal_point[2].x, goal_point[2].y, goal_point[2].z])
-        E = Point([goal_point[3].x, goal_point[3].y, goal_point[3].z])
+        point_a = Point([0, 0, 0])
+        point_b = Point([joints_goal_points[0].x, joints_goal_points[0].y, joints_goal_points[0].z])
+        point_c = Point([joints_goal_points[1].x, joints_goal_points[1].y, joints_goal_points[1].z])
+        point_d = Point([joints_goal_points[2].x, joints_goal_points[2].y, joints_goal_points[2].z])
+        point_e = Point([joints_goal_points[3].x, joints_goal_points[3].y, joints_goal_points[3].z])
         # todo: n-th point
 
-        base = [A, B]
-
-        AB = get_distance_between(A, B)
-        BC = get_distance_between(B, C)
-        CD = get_distance_between(C, D)
-        DE = get_distance_between(D, E)
+        base = [point_a, point_b]
+        a_to_b = get_distance_between(point_a, point_b)
+        b_to_c = get_distance_between(point_b, point_c)
+        c_to_d = get_distance_between(point_c, point_d)
+        d_to_e = get_distance_between(point_d, point_e)
         # todo: n-th distance
 
         # theta_1 is horizontal angle and is calculated from arcus tangens
         # ensures that arm is faced into goal point direction
-        theta_1 = float(atan2(goal_point[3].y, goal_point[3].x))
+        theta_1 = float(atan2(joints_goal_points[3].y, joints_goal_points[3].x))
 
         # theta_2/3/4 are vertical angles, they are responsible for
         # raching goal point vertically
@@ -227,73 +247,64 @@ class InverseKinematics:
         rounding_upto = 8
 
         # second theta
-        first_triangle = [A, C]
-        AC = get_distance_between(A, C)
-        nominator = (pow(AB,2) + pow(BC,2) - pow(AC,2))
-        denominator = (2 * AB * BC)
-        if C.x >= 0:
+        first_triangle = [point_a, point_c]
+        a_to_c = get_distance_between(point_a, point_c)
+        nominator = (pow(a_to_b,2) + pow(b_to_c,2) - pow(a_to_c,2))
+        denominator = (2 * a_to_b * b_to_c)
+        if point_c.x >= 0:
             theta_2 = (pi/2 - acos(round(nominator / denominator, rounding_upto))) * -1
         else:
             theta_2 = (pi + pi/2 - acos(round(nominator / denominator, rounding_upto))) # check?
 
         # third theta
-        second_triangle = [B, D]
-        BD = get_distance_between(B, D)
+        second_triangle = [point_b, point_d]
+        b_to_d = get_distance_between(point_b, point_d)
 
-        nominator = (pow(BC,2) + pow(CD,2) - pow(BD,2))
-        denominator = (2 * BC * CD)
+        nominator = (pow(b_to_c,2) + pow(c_to_d,2) - pow(b_to_d,2))
+        denominator = (2 * b_to_c * c_to_d)
         theta_3 = (pi - acos(round(nominator / denominator, rounding_upto))) * -1
-        if D.x < 0:
+        if point_d.x < 0:
             theta_3 = theta_3 * -1
 
         # fourth theta
-        third_triangle = [C, E]
-        CE = get_distance_between(C, E)
+        third_triangle = [point_c, point_e]
+        c_to_e = get_distance_between(point_c, point_e)
 
-        nominator = (pow(CD,2) + pow(DE,2) - pow(CE,2))
-        denominator = (2 * CD * DE)
+        nominator = (pow(c_to_d,2) + pow(d_to_e,2) - pow(c_to_e,2))
+        denominator = (2 * c_to_d * d_to_e)
         theta_4 = (pi - acos(round(nominator / denominator, rounding_upto))) * -1
-        if E.x < 0:
+        if point_e.x < 0:
             theta_4 = theta_4 * -1
 
         # todo: n-th triangle
 
-        return [theta_1, theta_2, theta_3, theta_4], [base, first_triangle, second_triangle, third_triangle]
+        return [theta_1, theta_2, theta_3, theta_4],\
+               [base, first_triangle, second_triangle, third_triangle]
 
     # use one of methods to compute inverse kinematics
-    def ikine(self, method, dest_point, max_err = 0.001, max_iterations_num = 100):
+    def ikine(self, dest_point):
         """ Calculate inverse kinematics """
         # Effector limits check
         if any(dp < limitv[1][0] or dp > limitv[1][1] for dp, limitv in zip(dest_point, self.workspace_limits.items())):
             raise Exception(f'Point {dest_point} is out of RoboArm reach area! Limits: {self.workspace_limits}')
 
-        if method.lower() == "fabrik":
-            # FABRIK
-            theta_1 = float(atan2(dest_point[1], dest_point[0])) # compute theta_1 to omit horizontal move in FABRIK
-            self.dh_matrix[0][0] = theta_1 # replace initial theta_1
+        # FABRIK
+        theta_1 = float(atan2(dest_point[1], dest_point[0])) # compute theta_1 to omit horizontal move in FABRIK
+        self.dh_matrix[0][0] = theta_1 # replace initial theta_1
 
-            # Compute initial xyz possition of every robot joint
-            fkine = ForwardKinematics()
-            _, fk_all = fkine.fkine(*self.dh_matrix)
-            init_joints_positions = [Point([x[0][3], x[1][3], x[2][3]]) for x in fk_all]
+        # Compute initial xyz possition of every robot joint
+        fkine = ForwardKinematics()
+        _, fk_all = fkine.fkine(*self.dh_matrix)
+        init_joints_positions = [Point([x[0][3], x[1][3], x[2][3]]) for x in fk_all]
 
-            # Compute joint positions using FABRIK
-            fab = Fabrik(init_joints_positions, self.joints_lengths, max_err, max_iterations_num)
-            goal_joints_positions = fab.calculate(dest_point)
+        # Compute joint positions using FABRIK
+        fab = Fabrik(init_joints_positions, self.joints_lengths, self.max_err, self.max_iterations_num)
+        goal_joints_positions = fab.calculate(dest_point)
 
-            # Compute roboarm angles from FABRIK computed positions
-            ik_angles, _ = self.fabrik_ik(goal_joints_positions)
+        # Compute roboarm angles from FABRIK computed positions
+        ik_angles, _ = self.__fabrik(goal_joints_positions)
 
-            return ik_angles
-
-        elif method.lower() == "ann":
-            return None
-
-        raise Exception('Unknown method!')
-
-
-class FabrikInverseKinematics(InverseKinematics):
-    """ Reaching inverse kinematics using Fabrik method """
+        return ik_angles
 
 class AnnInverseKinematics(InverseKinematics):
     """ reaching inverse kinematics using Artificial NN method """

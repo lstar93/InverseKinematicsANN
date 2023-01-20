@@ -29,7 +29,7 @@ from math import pi
 import sys
 import numpy as np
 from forward_kinematics import ForwardKinematics
-from inverse_kinematics import InverseKinematics, ANN
+from inverse_kinematics import InverseKinematics, ANN, FabrikInverseKinematics
 from plot import plot_points_3d, plot_joint_points_3d
 from position_generator import RoboarmTrainingDataGenerator
 
@@ -40,9 +40,9 @@ def predict(test_samples_test, separate_predictions=False, plot=False):
 
     if separate_predictions:
         for sample in test_samples_test:
-            ik_angles_ann.append(ann.predict_ik([sample]).tolist()[0])
+            ik_angles_ann.append(ann.predict([sample]).tolist()[0])
     else:
-        ik_angles_ann = ann.predict_ik(test_samples_test).tolist()
+        ik_angles_ann = ann.predict(test_samples_test).tolist()
 
     # compute FK to check ANN IK
     for angles in ik_angles_ann:
@@ -74,6 +74,7 @@ if __name__ == '__main__':
     ### CREATE MODEL
     ann = ANN(effector_workspace_limits, dh_matrix)
 
+    '''
     positions_samples_0 = RoboarmTrainingDataGenerator.cube_random(0.0033, 5, 12, 6, (1,-6,-2))
 
     positions_samples_1 = RoboarmTrainingDataGenerator.cube_random(0.0033, 6, 12, 2, (0,-6,4))
@@ -112,9 +113,30 @@ if __name__ == '__main__':
     ann.train_model(epochs, positions_samples, angles_features) # random data
     # gen = CubeDataGenerator(ikine, RoboarmTrainingDataGenerator.cube_random_gen(0.01, 5, 12, 6, (1,-6,0)), 15000, 64)
     # ann.train_model(epochs=1000, features=[], samples=[], generator=gen) # random data
+    '''
+    positions_samples = RoboarmTrainingDataGenerator.cube(0.5, 2, 2, 2, (0,0,0))
+    print(positions_samples)
+
+    for pos in positions_samples:
+        for i, elem in enumerate(pos):
+            pos[i] = round(elem, 10)
+            if pos[i] > 6:
+                print(pos[i])
+                sys.exit(0)
+    angles_features = [ikine.ikine(pos) for pos in positions_samples] # use FABRIK to prepare train/test features
+    print(angles_features)
+
+    shape = []
+    for angles in angles_features:
+        dh_matrix_out = [angles, [2, 0, 0, 0], [0, 2, 2, 2], [pi/2, 0, 0, 0]]
+        fk, _ = fkine.fkine(*dh_matrix_out)
+        shape.append([fk[0,3], fk[1,3], fk[2,3]])
+
+    plot_points_3d(shape)
 
     # use existing model
-    # ann.load_model('roboarm_model_1673989748-812473.h5')
+    '''
+    ann.load_model('roboarm_model_1674153800-982793.h5')
 
     ### TEST MODEL
 
@@ -147,3 +169,4 @@ if __name__ == '__main__':
 
     # except Exception as e:
     #     print(str(e))
+    '''
