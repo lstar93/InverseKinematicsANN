@@ -76,9 +76,6 @@ def cli_gen_data(parser):
     filename = known_args.to_file
     points = []
 
-    def save_to_file(file, pts):
-        pd.DataFrame(pts, columns=['x', 'y', 'z']).to_csv(file, index=False)
-
     # --generate-data --shape circle --radius 3 --samples 20 --centre '1,11,2' --verbose
     if known_args.shape == 'circle':
         parser.add_argument('--radius', required=True, type=int)
@@ -89,7 +86,6 @@ def cli_gen_data(parser):
         samples = known_args.samples
         centre = [int(pos) for pos in (known_args.centre.split(','))]
         points = TrainingDataGenerator.circle(radius, samples, centre)
-        save_to_file(filename, points)
         if verbose:
             print(radius, samples, centre)
             plot_points_3d(points)
@@ -105,7 +101,6 @@ def cli_gen_data(parser):
         dim = [int(pos) for pos in (known_args.dim.split(','))]
         start = [int(pos) for pos in (known_args.start.split(','))]
         points = generator(step, *dim, start)
-        save_to_file(filename, points)
         if verbose:
             print(step, dim, start)
             plot_points_3d(points)
@@ -126,7 +121,6 @@ def cli_gen_data(parser):
                     'y': [int(pos) for pos in (limits[1].split(','))],
                     'z': [int(pos) for pos in (limits[2].split(','))]}
         points = TrainingDataGenerator.random(samples, limits_dict)
-        save_to_file(filename, points)
         if verbose:
             print(samples, limits_dict)
             plot_points_3d(points)
@@ -139,7 +133,6 @@ def cli_gen_data(parser):
         samples = known_args.samples
         dim = [int(pos) for pos in (known_args.dim.split(','))]
         points = TrainingDataGenerator.spring(samples, *dim)
-        save_to_file(filename, points)
         if verbose:
             print(samples, dim)
             plot_points_3d(points)
@@ -165,12 +158,12 @@ def cli_gen_data(parser):
                     'y': [int(pos) for pos in (limits[1].split(','))],
                     'z': [int(pos) for pos in (limits[2].split(','))]}
         points = TrainingDataGenerator.random_distribution(samples, limits_dict, dist, std_dev)
-        save_to_file(filename, points)
         if verbose:
             print(samples, std_dev, limits_dict)
             plot_points_3d(points)
 
-    return points
+    if filename is not None:
+        pd.DataFrame(points, columns=['x', 'y', 'z']).to_csv(filename, index=False)
 
 
 if __name__ == '__main__':
@@ -198,6 +191,7 @@ if __name__ == '__main__':
     if cli_known_args.inverse_kine:
         angles_ik, input_points = cli_ikine(cliparser)
 
+        # use ForwardKinematics to check predictions
         predicted_points = []
         fkine = ForwardKinematics()
         for angles in angles_ik:
