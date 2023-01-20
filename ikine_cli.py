@@ -37,17 +37,17 @@ def cli_ikine(parser):
     dh_matrix = [[0, pi/2, 0, 0], [2, 0, 0, 0], [0, 2, 2, 2], [pi/2, 0, 0, 0]]
     effector_workspace_limits = {'x': [0,6], 'y': [-6,6], 'z': [-3,6]}
     links_lengths = [2, 2, 2, 2]
-    '''
-    if __name__ == '__main__':
-        if ikine_method == 'ann':
-            ik_engine = AnnInverseKinematics(dh_matrix, links_lengths, effector_workspace_limits)
-            ik_engine.load_model(model)
-        elif ikine_method == 'fabrik':
-            ik_engine = FabrikInverseKinematics(dh_matrix, links_lengths, effector_workspace_limits)
 
-        points_df = pd.read_csv(points_file)
-        # convert dataframe to list of points
-        angles = [ik_engine.ikine(pos) for pos in points_df]
+    '''
+    if ikine_method == 'ann':
+        ik_engine = AnnInverseKinematics(dh_matrix, links_lengths, effector_workspace_limits)
+        ik_engine.load_model(model)
+    elif ikine_method == 'fabrik':
+        ik_engine = FabrikInverseKinematics(dh_matrix, links_lengths, effector_workspace_limits)
+
+    points_df = pd.read_csv(points_file)
+    # convert dataframe to list of points
+    angles = [ik_engine.ikine(pos) for pos in points_df]
     '''
 
 def cli_gen_data(parser):
@@ -155,28 +155,29 @@ def cli_gen_data(parser):
     return points
 
 
-cliparser = argparse.ArgumentParser(prog='cli')
+if __name__ == '__main__':
+    cliparser = argparse.ArgumentParser(prog='cli')
 
-'''
-parser.add_argument('--inverse-kine', required = True, action='store_true',
-                        help='use ANN or Fabrik to compute robot inverse kinematics')
-parser.add_argument('--generate-data', action='store_true',
-                        help='use one of the available data generators to create tracjectory')
+    '''
+    parser.add_argument('--inverse-kine', required = True, action='store_true',
+                            help='use ANN or Fabrik to compute robot inverse kinematics')
+    parser.add_argument('--generate-data', action='store_true',
+                            help='use one of the available data generators to create tracjectory')
 
-cliparser.add_argument('--execute', required = True, choices=['inverse_kine', 'generate_data'],
-                        help='use ANN or Fabrik to compute robot inverse kinematics \
-                            or choose generator and generate trajectory to csv file')
-'''
-group = cliparser.add_mutually_exclusive_group()
-group.add_argument('--inverse-kine', action='store_true')
-group.add_argument('--generate-data', action='store_true')
+    cliparser.add_argument('--execute', required = True, choices=['inverse_kine', 'generate_data'],
+                            help='use ANN or Fabrik to compute robot inverse kinematics \
+                                or choose generator and generate trajectory to csv file')
+    '''
+    group = cliparser.add_mutually_exclusive_group()
+    group.add_argument('--inverse-kine', action='store_true')
+    group.add_argument('--generate-data', action='store_true')
 
-cli_known_args, _ = cliparser.parse_known_args()
+    cli_known_args, _ = cliparser.parse_known_args()
 
-if cli_known_args.inverse_kine is False and cli_known_args.generate_data is False:
-    cliparser.error('Operation either --inverse-kine or --generate-data must be set')
+    if cli_known_args.inverse_kine is False and cli_known_args.generate_data is False:
+        cliparser.error('Operation either --inverse-kine or --generate-data must be set')
 
-if cli_known_args.inverse_kine:
-    cli_ikine(cliparser)
-elif cli_known_args.generate_data:
-    cli_gen_data(cliparser)
+    if cli_known_args.inverse_kine:
+        cli_ikine(cliparser)
+    elif cli_known_args.generate_data:
+        cli_gen_data(cliparser)
