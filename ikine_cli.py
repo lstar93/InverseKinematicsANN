@@ -10,21 +10,6 @@ from inverse_kinematics import AnnInverseKinematics, FabrikInverseKinematics
 from plot import plot_points_3d
 from position_generator import TrainingDataGenerator
 
-cliparser = argparse.ArgumentParser(prog='cli')
-
-'''
-parser.add_argument('--inverse-kine', required = True, action='store_true',
-                        help='use ANN or Fabrik to compute robot inverse kinematics')
-parser.add_argument('--generate-data', action='store_true',
-                        help='use one of the available data generators to create tracjectory')
-'''
-
-cliparser.add_argument('--execute', required = True, choices=['inverse_kine', 'generate_data'],
-                        help='use ANN or Fabrik to compute robot inverse kinematics \
-                            or choose generator and generate trajectory to csv file')
-
-cli_known_args, _ = cliparser.parse_known_args()
-
 def cli_ikine(parser):
     """ Inverse kinematics CLI """
     parser.add_argument('--method', required=True, type=str, choices=['ann', 'fabrik'],
@@ -81,7 +66,7 @@ def cli_gen_data(parser):
     filename = known_args.filename
     points = []
 
-    # position_generator.py --shape circle --radius 3 --samples 20 --centre '1,11,2' --verbose
+    # --generate-data --shape circle --radius 3 --samples 20 --centre '1,11,2' --verbose
     if known_args.shape == 'circle':
         parser.add_argument('--radius', required=True, type=int)
         parser.add_argument('--samples', required=True, type=int)
@@ -95,8 +80,8 @@ def cli_gen_data(parser):
             print(radius, samples, centre)
             plot_points_3d(points)
 
-    # position_generator.py --shape cube --step 0.75 --dim '2,3,4' --start '1,2,3' --verbose
-    # position_generator.py --shape cube_random --step 0.75 --dim '2,3,4' --start '1,2,3' --verbose
+    # --generate-data --shape cube --step 0.75 --dim '2,3,4' --start '1,2,3' --verbose
+    # --generate-data --shape cube_random --step 0.75 --dim '2,3,4' --start '1,2,3' --verbose
     def cube(generator):
         parser.add_argument('--step', required=True, type=float)
         parser.add_argument('--dim', required=True, type=str)
@@ -115,7 +100,7 @@ def cli_gen_data(parser):
     elif known_args.shape == 'cube_random':
         cube(TrainingDataGenerator.cube_random)
 
-    # position_generator.py --shape random --limits '0,3;0,4;0,5' --samples 20 --verbose
+    # --generate-data --shape random --limits '0,3;0,4;0,5' --samples 20 --verbose
     if known_args.shape == 'random':
         parser.add_argument('--samples', required=True, type=int)
         parser.add_argument('--limits', required=True, type=str)
@@ -130,7 +115,7 @@ def cli_gen_data(parser):
             print(samples, limits_dict)
             plot_points_3d(points)
 
-    # position_generator.py --shape spring --samples 50 --dim '2,3,6' --verbose
+    # --generate-data --shape spring --samples 50 --dim '2,3,6' --verbose
     if known_args.shape == 'spring':
         parser.add_argument('--samples', required=True, type=int)
         parser.add_argument('--dim', required=True, type=str)
@@ -142,11 +127,11 @@ def cli_gen_data(parser):
             print(samples, dim)
             plot_points_3d(points)
 
-    # position_generator.py --shape random_dist --dist 'normal' \
+    # --generate-data --shape random_dist --dist 'normal' \
     #   --samples 100 --std_dev 0.35 --limits '0,3;0,4;0,5' --verbose
-    # position_generator.py --shape random_dist --dist 'uniform' \
+    # --generate-data --shape random_dist --dist 'uniform' \
     #   --samples 100 --std_dev 0.35 --limits '0,3;0,4;0,5' --verbose
-    # position_generator.py --shape random_dist --dist 'random' \
+    # --generate-data --shape random_dist --dist 'random' \
     #   --samples 100 --std_dev 0.35 --limits '0,3;0,4;0,5' --verbose
     if known_args.shape == 'random_dist':
         parser.add_argument('--dist', required=True, type=str,
@@ -169,7 +154,29 @@ def cli_gen_data(parser):
 
     return points
 
-if cli_known_args.execute == 'inverse_kine':
+
+cliparser = argparse.ArgumentParser(prog='cli')
+
+'''
+parser.add_argument('--inverse-kine', required = True, action='store_true',
+                        help='use ANN or Fabrik to compute robot inverse kinematics')
+parser.add_argument('--generate-data', action='store_true',
+                        help='use one of the available data generators to create tracjectory')
+
+cliparser.add_argument('--execute', required = True, choices=['inverse_kine', 'generate_data'],
+                        help='use ANN or Fabrik to compute robot inverse kinematics \
+                            or choose generator and generate trajectory to csv file')
+'''
+group = cliparser.add_mutually_exclusive_group()
+group.add_argument('--inverse-kine', action='store_true')
+group.add_argument('--generate-data', action='store_true')
+
+cli_known_args, _ = cliparser.parse_known_args()
+
+if cli_known_args.inverse_kine is False and cli_known_args.generate_data is False:
+    cliparser.error('Operation either --inverse-kine or --generate-data must be set')
+
+if cli_known_args.inverse_kine:
     cli_ikine(cliparser)
-elif cli_known_args.execute == 'generate_data':
+elif cli_known_args.generate_data:
     cli_gen_data(cliparser)
