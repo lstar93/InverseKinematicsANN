@@ -2,6 +2,29 @@
 #!/usr/bin/env python
 
 # pylint: disable=W0105 # suppress unnecesary strings in code
+# pylint: disable=W0511 # suppress TODOs
+# pylint: disable=W1401 # string constant might be missing r prefix
+# pylint: disable=W0105 # string has no effect
+# pylint: disable=C0413 # imports should be placed at the top of the module
+
+'''
+      2y |          | 3y
+         |     l3   |
+         0-->-------0--> 3x
+        /  2x        \
+   y1| / l2        l4 \ |4y
+     |/                \|
+  1z 0-->1x          4z 0-->4x
+     |                 ----
+     | l1              |  |
+    /_\
+    \ /
+     |
+_____|_____
+
+TODO:
+1. read robot configuration (with angle limits) from file
+'''
 
 import argparse
 from math import pi
@@ -15,6 +38,7 @@ from forward_kinematics import ForwardKinematics
 dh_matrix = [[0, pi/2, 0, 0], [2, 0, 0, 0], [0, 2, 2, 2], [pi/2, 0, 0, 0]]
 effector_workspace_limits = {'x': [0,6], 'y': [-6,6], 'z': [-3,6]}
 links_lengths = [2, 2, 2, 2]
+
 
 def cli_ikine(parser):
     """ Inverse kinematics CLI """
@@ -186,7 +210,7 @@ if __name__ == '__main__':
     cli_known_args, _ = cliparser.parse_known_args()
 
     if cli_known_args.inverse_kine is False and cli_known_args.generate_data is False:
-        cliparser.error('Operation either --inverse-kine or --generate-data must be set')
+        cliparser.error('Operation --inverse-kine or --generate-data must be set')
 
     if cli_known_args.inverse_kine:
         angles_ik, input_points = cli_ikine(cliparser)

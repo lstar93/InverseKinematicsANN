@@ -5,3 +5,4 @@ joint_controller.py
 __pycache__
 test.py
 unit_tests.py
+robot.py
