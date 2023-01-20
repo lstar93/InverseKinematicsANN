@@ -51,14 +51,10 @@ def get_point_between(start_point, end_point, distance):
     """ Compute coordinates of Point between two other points \
             or coordinates of point in given distance from other point """
     def coords(start_point_axis, end_point_axis):
-        sec = ((distance/get_distance_between(start_point, end_point))*(end_point_axis - start_point_axis))
-        return start_point_axis + sec
-    try:
-        return Point([coords(start_point.x, end_point.x),
-                    coords(start_point.y, end_point.y),
-                    coords(start_point.z, end_point.z)])
-    except Exception as exc:
-        print(f'{start_point} {str(exc)}')
+        return start_point_axis + ((distance/get_distance_between(start_point, end_point))*(end_point_axis - start_point_axis))
+    return Point([coords(start_point.x, end_point.x),
+                coords(start_point.y, end_point.y),
+                coords(start_point.z, end_point.z)])
 
 
 class Fabrik:
@@ -205,6 +201,7 @@ class InverseKinematics:
         self.dh_matrix = dh_matrix
         self.joints_lengths = joints_lengths
         self.workspace_limits = workspace_limits
+        self.fkine = ForwardKinematics()
         # self.first_rev_joint_point = Point([0,0,dh_matrix[0]])
 
     # use one of methods to compute inverse kinematics
@@ -222,10 +219,7 @@ class FabrikInverseKinematics(InverseKinematics):
     def __fabrik(self, joints_goal_points):
         """ Calculate angles from cosine theorem """
         point_a = Point([0, 0, 0])
-        point_b = Point([joints_goal_points[0].x, joints_goal_points[0].y, joints_goal_points[0].z])
-        point_c = Point([joints_goal_points[1].x, joints_goal_points[1].y, joints_goal_points[1].z])
-        point_d = Point([joints_goal_points[2].x, joints_goal_points[2].y, joints_goal_points[2].z])
-        point_e = Point([joints_goal_points[3].x, joints_goal_points[3].y, joints_goal_points[3].z])
+        point_b, point_c, point_d, point_e = joints_goal_points
         # todo: n-th point
 
         base = [point_a, point_b]
@@ -293,8 +287,7 @@ class FabrikInverseKinematics(InverseKinematics):
         self.dh_matrix[0][0] = theta_1 # replace initial theta_1
 
         # Compute initial xyz possition of every robot joint
-        fkine = ForwardKinematics()
-        _, fk_all = fkine.fkine(*self.dh_matrix)
+        _, fk_all = self.fkine.fkine(*self.dh_matrix)
         init_joints_positions = [Point([x[0][3], x[1][3], x[2][3]]) for x in fk_all]
 
         # Compute joint positions using FABRIK
@@ -308,3 +301,21 @@ class FabrikInverseKinematics(InverseKinematics):
 
 class AnnInverseKinematics(InverseKinematics):
     """ reaching inverse kinematics using Artificial NN method """
+    def __init__(self, dh_matrix, joints_lengths, workspace_limits):
+        super().__init__(dh_matrix, joints_lengths, workspace_limits)
+        self.ann = ANN(workspace_limits, dh_matrix)
+
+    def load_model(self, model_name):
+        """ Load model from .h5 file """
+        self.ann.load_model(model_name)
+
+    def ikine(self, dest_point, single_prediction = False):
+        """ Predict thetas using neural network """
+        ik_angles = []
+        if single_prediction:
+            ik_angles = self.ann.predict(dest_point).tolist()
+        else:
+            for sample in dest_point:
+                ik_angles.append(self.ann.predict([sample]).tolist()[0])
+            return ik_angles[0]
+        return ik_angles

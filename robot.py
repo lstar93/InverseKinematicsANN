@@ -29,7 +29,7 @@ from math import pi
 import sys
 import numpy as np
 from forward_kinematics import ForwardKinematics
-from inverse_kinematics import InverseKinematics, ANN, FabrikInverseKinematics
+from inverse_kinematics import ANN, FabrikInverseKinematics, AnnInverseKinematics
 from plot import plot_points_3d, plot_joint_points_3d
 from position_generator import RoboarmTrainingDataGenerator
 
@@ -65,7 +65,10 @@ if __name__ == '__main__':
     links_lengths = [2, 2, 2, 2]
 
     # inverse kinematics engine
-    ikine = InverseKinematics(dh_matrix, links_lengths, effector_workspace_limits)
+    ikine = FabrikInverseKinematics(dh_matrix, links_lengths, effector_workspace_limits)
+
+    ikine_ann = AnnInverseKinematics(dh_matrix, links_lengths, effector_workspace_limits)
+    ikine_ann.load_model('roboarm_model_1674153800-982793.h5')
 
     # forward kinematics
     fkine = ForwardKinematics()
@@ -114,17 +117,13 @@ if __name__ == '__main__':
     # gen = CubeDataGenerator(ikine, RoboarmTrainingDataGenerator.cube_random_gen(0.01, 5, 12, 6, (1,-6,0)), 15000, 64)
     # ann.train_model(epochs=1000, features=[], samples=[], generator=gen) # random data
     '''
-    positions_samples = RoboarmTrainingDataGenerator.cube(0.5, 2, 2, 2, (0,0,0))
-    print(positions_samples)
+    positions_samples = RoboarmTrainingDataGenerator.cube(0.5, 2, 2, 2, (0.5, 0.5, 0.5))
 
-    for pos in positions_samples:
-        for i, elem in enumerate(pos):
-            pos[i] = round(elem, 10)
-            if pos[i] > 6:
-                print(pos[i])
-                sys.exit(0)
+    '''
     angles_features = [ikine.ikine(pos) for pos in positions_samples] # use FABRIK to prepare train/test features
-    print(angles_features)
+    '''
+    # angles_features = [ikine_ann.ikine([pos]) for pos in positions_samples]
+    angles_features = ikine_ann.ikine(positions_samples, True)
 
     shape = []
     for angles in angles_features:
@@ -132,7 +131,7 @@ if __name__ == '__main__':
         fk, _ = fkine.fkine(*dh_matrix_out)
         shape.append([fk[0,3], fk[1,3], fk[2,3]])
 
-    plot_points_3d(shape)
+    plot_joint_points_3d(shape, positions_samples)
 
     # use existing model
     '''
