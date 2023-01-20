@@ -31,7 +31,7 @@ import numpy as np
 from forward_kinematics import ForwardKinematics
 from inverse_kinematics import ANN, FabrikInverseKinematics, AnnInverseKinematics
 from plot import plot_points_3d, plot_joint_points_3d
-from position_generator import RoboarmTrainingDataGenerator
+from position_generator import TrainingDataGenerator
 
 def predict(test_samples_test, separate_predictions=False, plot=False):
     """ Predict thetas using neural network """
@@ -78,19 +78,19 @@ if __name__ == '__main__':
     ann = ANN(effector_workspace_limits, dh_matrix)
 
     '''
-    positions_samples_0 = RoboarmTrainingDataGenerator.cube_random(0.0033, 5, 12, 6, (1,-6,-2))
+    positions_samples_0 = TrainingDataGenerator.cube_random(0.0033, 5, 12, 6, (1,-6,-2))
 
-    positions_samples_1 = RoboarmTrainingDataGenerator.cube_random(0.0033, 6, 12, 2, (0,-6,4))
+    positions_samples_1 = TrainingDataGenerator.cube_random(0.0033, 6, 12, 2, (0,-6,4))
 
-    positions_samples_2 = RoboarmTrainingDataGenerator.random(20000, limits=effector_workspace_limits)
+    positions_samples_2 = TrainingDataGenerator.random(20000, limits=effector_workspace_limits)
 
-    positions_samples_3 = RoboarmTrainingDataGenerator.random_distribution(
+    positions_samples_3 = TrainingDataGenerator.random_distribution(
 														no_of_samples = 20000,
 														limits = effector_workspace_limits,
 														distribution='normal',
 														std_dev=0.33)
 
-    positions_samples_4 = RoboarmTrainingDataGenerator.cube_random(0.0033, 2, 12, 4, (0,-6,-2))
+    positions_samples_4 = TrainingDataGenerator.cube_random(0.0033, 2, 12, 4, (0,-6,-2))
 
     # plot_points_3d(positions_samples)
 
@@ -114,10 +114,10 @@ if __name__ == '__main__':
     # train model using generated dataset
     epochs = 1000
     ann.train_model(epochs, positions_samples, angles_features) # random data
-    # gen = CubeDataGenerator(ikine, RoboarmTrainingDataGenerator.cube_random_gen(0.01, 5, 12, 6, (1,-6,0)), 15000, 64)
+    # gen = CubeDataGenerator(ikine, TrainingDataGenerator.cube_random_gen(0.01, 5, 12, 6, (1,-6,0)), 15000, 64)
     # ann.train_model(epochs=1000, features=[], samples=[], generator=gen) # random data
     '''
-    positions_samples = RoboarmTrainingDataGenerator.cube(0.5, 2, 2, 2, (0.5, 0.5, 0.5))
+    positions_samples = TrainingDataGenerator.cube(0.5, 2, 2, 2, (0.5, 0.5, 0.5))
     
     angles_features = [ikine.ikine(pos) for pos in positions_samples] # use FABRIK to prepare train/test features
     # angles_features = [ikine_ann.ikine([pos]) for pos in positions_samples]
@@ -139,7 +139,7 @@ if __name__ == '__main__':
 
     # test trajectory data
     test_shape = [2, 2, 2]
-    test_sample = RoboarmTrainingDataGenerator.cube(0.5, *test_shape, start=(1,0,1))
+    test_sample = TrainingDataGenerator.cube(0.5, *test_shape, start=(1,0,1))
     plot_points_3d(test_sample)
     predicted = predict(test_sample, True, True)
     plot_joint_points_3d(predicted, test_sample)
@@ -148,13 +148,13 @@ if __name__ == '__main__':
     radius = 2
     no_of_samples = 30
     centre = [1,3,1]
-    test_sample = RoboarmTrainingDataGenerator.circle(radius, no_of_samples, centre)
+    test_sample = TrainingDataGenerator.circle(radius, no_of_samples, centre)
     plot_points_3d(test_sample)
     predicted = predict(test_sample, True, True)
     plot_joint_points_3d(predicted, test_sample)
 
     spring_size = [2, 2, 4]
-    test_sample = RoboarmTrainingDataGenerator.spring(no_of_samples, *spring_size)
+    test_sample = TrainingDataGenerator.spring(no_of_samples, *spring_size)
     plot_points_3d(test_sample)
     predicted = predict(test_sample, True, True)
     plot_joint_points_3d(predicted, test_sample, True)

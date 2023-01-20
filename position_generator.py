@@ -21,8 +21,8 @@ def get_truncated_normal_distribution(mean=0, std_dev=1, low=0, upp=10):
     return truncnorm((low - mean) / std_dev, (upp - mean) / std_dev, loc=mean, scale=std_dev)
 
 
-class RoboarmTrainingDataGenerator:
-    """ Class used to enerate learn data for ANN """
+class TrainingDataGenerator:
+    """ Class used to generate trainig/test data for ANN """
 
     @staticmethod
     def circle(radius, no_of_samples, centre):
@@ -98,7 +98,7 @@ class RoboarmTrainingDataGenerator:
                 positions.append(arr)
         return transpose(positions)
 
-# TODO: check generator unexpected exchaustion
+# TODO: check generator unexpected exhaustion
 class CubeDataGenerator(keras.utils.Sequence):
     """ Cube generator class for keras fit method """
     def __init__(self, ikine, generator, datalen, batch_size):
