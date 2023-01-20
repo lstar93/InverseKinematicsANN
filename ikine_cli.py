@@ -7,8 +7,14 @@ import argparse
 from math import pi
 import pandas as pd
 from inverse_kinematics import AnnInverseKinematics, FabrikInverseKinematics
-from plot import plot_points_3d
+from plot import plot_points_3d, plot_joint_points_3d
 from position_generator import TrainingDataGenerator
+from forward_kinematics import ForwardKinematics
+
+# 6 DOF robot DH matrix, links lengths, workspace and joints limits
+dh_matrix = [[0, pi/2, 0, 0], [2, 0, 0, 0], [0, 2, 2, 2], [pi/2, 0, 0, 0]]
+effector_workspace_limits = {'x': [0,6], 'y': [-6,6], 'z': [-3,6]}
+links_lengths = [2, 2, 2, 2]
 
 def cli_ikine(parser):
     """ Inverse kinematics CLI """
@@ -23,32 +29,36 @@ def cli_ikine(parser):
     parser.add_argument('--points', type=str, required=True,
                             help='.csv file name with stored trajectory points')
 
-    parser.add_argument('--plot', action='store_true',
-                            help='add to plot results')
+    parser.add_argument('--to-file', type=str)
+    parser.add_argument('--verbose', action='store_true')
 
     args = parser.parse_args()
 
-    # print(args.inverse_kine)
     ikine_method = args.method
-    model = args.model
     points_file = args.points
+    points = pd.read_csv(points_file).values.tolist()
 
-    # 6 DOF robot DH matrix, links lengths, workspace and joints limits
-    dh_matrix = [[0, pi/2, 0, 0], [2, 0, 0, 0], [0, 2, 2, 2], [pi/2, 0, 0, 0]]
-    effector_workspace_limits = {'x': [0,6], 'y': [-6,6], 'z': [-3,6]}
-    links_lengths = [2, 2, 2, 2]
-
-    '''
+    joint_angles = []
     if ikine_method == 'ann':
+        model = args.model
         ik_engine = AnnInverseKinematics(dh_matrix, links_lengths, effector_workspace_limits)
         ik_engine.load_model(model)
+        joint_angles = [ik_engine.ikine([pos]) for pos in points]
+
     elif ikine_method == 'fabrik':
         ik_engine = FabrikInverseKinematics(dh_matrix, links_lengths, effector_workspace_limits)
+        joint_angles = [ik_engine.ikine(pos) for pos in points]
 
-    points_df = pd.read_csv(points_file)
-    # convert dataframe to list of points
-    angles = [ik_engine.ikine(pos) for pos in points_df]
-    '''
+    if args.to_file is not None:
+        pd.DataFrame(joint_angles,
+                     columns=['theta1', 'theta2', 'theta3', 'theta4'])\
+                     .to_csv(args.to_file, index=False)
+
+    if args.verbose:
+        print(joint_angles)
+
+    return joint_angles, points
+
 
 def cli_gen_data(parser):
     """ Simple CLI to generate .csv with trajectories """
@@ -59,12 +69,15 @@ def cli_gen_data(parser):
                             help='select which shape should be generated')
 
     parser.add_argument('--verbose', action='store_true')
-    parser.add_argument('--filename', type=str)
+    parser.add_argument('--to-file', type=str)
 
     known_args, _ = parser.parse_known_args()
     verbose = known_args.verbose
-    filename = known_args.filename
+    filename = known_args.to_file
     points = []
+
+    def save_to_file(file, pts):
+        pd.DataFrame(pts, columns=['x', 'y', 'z']).to_csv(file, index=False)
 
     # --generate-data --shape circle --radius 3 --samples 20 --centre '1,11,2' --verbose
     if known_args.shape == 'circle':
@@ -76,6 +89,7 @@ def cli_gen_data(parser):
         samples = known_args.samples
         centre = [int(pos) for pos in (known_args.centre.split(','))]
         points = TrainingDataGenerator.circle(radius, samples, centre)
+        save_to_file(filename, points)
         if verbose:
             print(radius, samples, centre)
             plot_points_3d(points)
@@ -91,6 +105,7 @@ def cli_gen_data(parser):
         dim = [int(pos) for pos in (known_args.dim.split(','))]
         start = [int(pos) for pos in (known_args.start.split(','))]
         points = generator(step, *dim, start)
+        save_to_file(filename, points)
         if verbose:
             print(step, dim, start)
             plot_points_3d(points)
@@ -111,6 +126,7 @@ def cli_gen_data(parser):
                     'y': [int(pos) for pos in (limits[1].split(','))],
                     'z': [int(pos) for pos in (limits[2].split(','))]}
         points = TrainingDataGenerator.random(samples, limits_dict)
+        save_to_file(filename, points)
         if verbose:
             print(samples, limits_dict)
             plot_points_3d(points)
@@ -123,6 +139,7 @@ def cli_gen_data(parser):
         samples = known_args.samples
         dim = [int(pos) for pos in (known_args.dim.split(','))]
         points = TrainingDataGenerator.spring(samples, *dim)
+        save_to_file(filename, points)
         if verbose:
             print(samples, dim)
             plot_points_3d(points)
@@ -148,6 +165,7 @@ def cli_gen_data(parser):
                     'y': [int(pos) for pos in (limits[1].split(','))],
                     'z': [int(pos) for pos in (limits[2].split(','))]}
         points = TrainingDataGenerator.random_distribution(samples, limits_dict, dist, std_dev)
+        save_to_file(filename, points)
         if verbose:
             print(samples, std_dev, limits_dict)
             plot_points_3d(points)
@@ -178,6 +196,16 @@ if __name__ == '__main__':
         cliparser.error('Operation either --inverse-kine or --generate-data must be set')
 
     if cli_known_args.inverse_kine:
-        cli_ikine(cliparser)
+        angles_ik, input_points = cli_ikine(cliparser)
+
+        predicted_points = []
+        fkine = ForwardKinematics()
+        for angles in angles_ik:
+            dh_matrix_out = [angles, *dh_matrix[1:]]
+            fk, _ = fkine.fkine(*dh_matrix_out)
+            predicted_points.append([fk[0,3], fk[1,3], fk[2,3]])
+
+        plot_joint_points_3d(predicted_points, input_points)
+
     elif cli_known_args.generate_data:
         cli_gen_data(cliparser)

@@ -4,15 +4,11 @@
 # pylint: disable=W0511 # suppress TODOs
 # pylint: disable=W0105 # suppress unnecesary strings in code
 
-import argparse
 from math import sin, cos
 import random as rand
 import numpy as np
-import pandas as pd
 from scipy.stats import truncnorm
 from sklearn.preprocessing import minmax_scale
-
-from plot import plot_points_3d
 
 def transpose(data):
     """ Transpose list """
