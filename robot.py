@@ -118,12 +118,10 @@ if __name__ == '__main__':
     # ann.train_model(epochs=1000, features=[], samples=[], generator=gen) # random data
     '''
     positions_samples = RoboarmTrainingDataGenerator.cube(0.5, 2, 2, 2, (0.5, 0.5, 0.5))
-
-    '''
+    
     angles_features = [ikine.ikine(pos) for pos in positions_samples] # use FABRIK to prepare train/test features
-    '''
     # angles_features = [ikine_ann.ikine([pos]) for pos in positions_samples]
-    angles_features = ikine_ann.ikine(positions_samples, True)
+    # angles_features = ikine_ann.ikine(positions_samples, True)
 
     shape = []
     for angles in angles_features:
