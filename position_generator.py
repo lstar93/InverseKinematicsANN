@@ -2,15 +2,13 @@
 #!/usr/bin/env python
 
 # pylint: disable=W0511 # suppress TODOs
+# pylint: disable=W0105 # suppress unnecesary strings in code
 
 from math import sin, cos
 import random as rand
 import numpy as np
 from scipy.stats import truncnorm
-
 from sklearn.preprocessing import minmax_scale
-import keras
-
 
 def transpose(data):
     """ Transpose list """
@@ -28,7 +26,7 @@ class TrainingDataGenerator:
     def circle(radius, no_of_samples, centre):
         """ Circle shape """
         def generate_shape(tstamp):
-            return [centre[0], centre[1] * sin(tstamp), centre[2] + radius*cos(tstamp)]
+            return [centre[0], centre[1] + sin(tstamp), centre[2] + radius*cos(tstamp)]
         return [generate_shape(t) for t in range(no_of_samples)]
 
     @staticmethod
@@ -78,7 +76,6 @@ class TrainingDataGenerator:
         axis_y = ((np.cos(axis_z)*len_y)+len_y)
         return [[x/2,y/2,z] for x,y,z in zip(axis_x, axis_y, axis_z)]
 
-    # Random trajectory
     @staticmethod
     def random_distribution(no_of_samples, limits, distribution = 'normal', std_dev=0.5):
         """ Different ways to create randomly generated data """
@@ -98,6 +95,7 @@ class TrainingDataGenerator:
                 positions.append(arr)
         return transpose(positions)
 
+'''
 # TODO: check generator unexpected exhaustion
 class CubeDataGenerator(keras.utils.Sequence):
     """ Cube generator class for keras fit method """
@@ -117,3 +115,4 @@ class CubeDataGenerator(keras.utils.Sequence):
     def __len__(self):
         # Denotes the number of batches per epoch
         return self.datalen // self.batch_size
+'''
