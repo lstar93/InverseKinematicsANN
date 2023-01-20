@@ -86,7 +86,7 @@ class ANN:
         date_now = datetime.now()
         # replace . with - in filename to look better
         timestamp_str = str(datetime.timestamp(date_now)).replace('.','-')
-        self.model.save(f'roboarm_model_{timestamp_str}.h5')
+        self.model.save(f'model_{timestamp_str}.h5')
         # save scalers
-        dump(self.x_data_skaler, f'roboarm_model_{timestamp_str}_scaler_x.bin', compress=True)
-        dump(self.y_data_skaler, f'roboarm_model_{timestamp_str}_scaler_y.bin', compress=True)
+        dump(self.x_data_skaler, f'model_{timestamp_str}_scaler_x.bin', compress=True)
+        dump(self.y_data_skaler, f'model_{timestamp_str}_scaler_y.bin', compress=True)
