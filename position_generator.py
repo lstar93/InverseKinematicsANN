@@ -2,15 +2,17 @@
 #!/usr/bin/env python
 
 # pylint: disable=W0511 # suppress TODOs
+# pylint: disable=W0105 # suppress unnecesary strings in code
 
+import argparse
 from math import sin, cos
 import random as rand
 import numpy as np
+import pandas as pd
 from scipy.stats import truncnorm
-
 from sklearn.preprocessing import minmax_scale
-import keras
 
+from plot import plot_points_3d
 
 def transpose(data):
     """ Transpose list """
@@ -28,7 +30,7 @@ class TrainingDataGenerator:
     def circle(radius, no_of_samples, centre):
         """ Circle shape """
         def generate_shape(tstamp):
-            return [centre[0], centre[1] * sin(tstamp), centre[2] + radius*cos(tstamp)]
+            return [centre[0], centre[1] + sin(tstamp), centre[2] + radius*cos(tstamp)]
         return [generate_shape(t) for t in range(no_of_samples)]
 
     @staticmethod
@@ -78,7 +80,6 @@ class TrainingDataGenerator:
         axis_y = ((np.cos(axis_z)*len_y)+len_y)
         return [[x/2,y/2,z] for x,y,z in zip(axis_x, axis_y, axis_z)]
 
-    # Random trajectory
     @staticmethod
     def random_distribution(no_of_samples, limits, distribution = 'normal', std_dev=0.5):
         """ Different ways to create randomly generated data """
@@ -98,6 +99,114 @@ class TrainingDataGenerator:
                 positions.append(arr)
         return transpose(positions)
 
+
+def cli():
+    """ Simple CLI to generate .csv with trajectories """
+    parser = argparse.ArgumentParser(prog='positions_generator')
+    parser.add_argument('--shape', required=True, type=str,
+                            choices=['circle', 'cube', 'cube_random',\
+                                        'random', 'spring', 'random_dist'],
+                            help='select which shape should be generated')
+
+    parser.add_argument('--verbose', action='store_true')
+    parser.add_argument('--filename', type=str)
+
+    known_args, _ = parser.parse_known_args()
+    verbose = known_args.verbose
+    filename = known_args.filename
+    points = []
+
+    # position_generator.py --shape circle --radius 3 --samples 20 --centre '1,11,2' --verbose
+    if known_args.shape == 'circle':
+        parser.add_argument('--radius', required=True, type=int)
+        parser.add_argument('--samples', required=True, type=int)
+        parser.add_argument('--centre', required=True, type=str)
+        known_args, _ = parser.parse_known_args()
+        radius = known_args.radius
+        samples = known_args.samples
+        centre = [int(pos) for pos in (known_args.centre.split(','))]
+        points = TrainingDataGenerator.circle(radius, samples, centre)
+        if verbose:
+            print(radius, samples, centre)
+            plot_points_3d(points)
+
+    # position_generator.py --shape cube --step 0.75 --dim '2,3,4' --start '1,2,3' --verbose
+    # position_generator.py --shape cube_random --step 0.75 --dim '2,3,4' --start '1,2,3' --verbose
+    def cube(generator):
+        parser.add_argument('--step', required=True, type=float)
+        parser.add_argument('--dim', required=True, type=str)
+        parser.add_argument('--start', required=True, type=str)
+        known_args, _ = parser.parse_known_args()
+        step = known_args.step
+        dim = [int(pos) for pos in (known_args.dim.split(','))]
+        start = [int(pos) for pos in (known_args.start.split(','))]
+        points = generator(step, *dim, start)
+        if verbose:
+            print(step, dim, start)
+            plot_points_3d(points)
+
+    if known_args.shape == 'cube':
+        cube(TrainingDataGenerator.cube)
+    elif known_args.shape == 'cube_random':
+        cube(TrainingDataGenerator.cube_random)
+
+    # position_generator.py --shape random --limits '0,3;0,4;0,5' --samples 20 --verbose
+    if known_args.shape == 'random':
+        parser.add_argument('--samples', required=True, type=int)
+        parser.add_argument('--limits', required=True, type=str)
+        known_args, _ = parser.parse_known_args()
+        samples = known_args.samples
+        limits = list(known_args.limits.split(';'))
+        limits_dict = {'x': [int(pos) for pos in (limits[0].split(','))],
+                       'y': [int(pos) for pos in (limits[1].split(','))],
+                       'z': [int(pos) for pos in (limits[2].split(','))]}
+        points = TrainingDataGenerator.random(samples, limits_dict)
+        if verbose:
+            print(samples, limits_dict)
+            plot_points_3d(points)
+
+    # position_generator.py --shape spring --samples 50 --dim '2,3,6' --verbose
+    if known_args.shape == 'spring':
+        parser.add_argument('--samples', required=True, type=int)
+        parser.add_argument('--dim', required=True, type=str)
+        known_args, _ = parser.parse_known_args()
+        samples = known_args.samples
+        dim = [int(pos) for pos in (known_args.dim.split(','))]
+        points = TrainingDataGenerator.spring(samples, *dim)
+        if verbose:
+            print(samples, dim)
+            plot_points_3d(points)
+
+    # position_generator.py --shape random_dist --dist 'normal' \
+    #   --samples 100 --std_dev 0.35 --limits '0,3;0,4;0,5' --verbose
+    # position_generator.py --shape random_dist --dist 'uniform' \
+    #   --samples 100 --std_dev 0.35 --limits '0,3;0,4;0,5' --verbose
+    # position_generator.py --shape random_dist --dist 'random' \
+    #   --samples 100 --std_dev 0.35 --limits '0,3;0,4;0,5' --verbose
+    if known_args.shape == 'random_dist':
+        parser.add_argument('--dist', required=True, type=str,
+                             choices=['normal', 'uniform', 'random'])
+        parser.add_argument('--samples', required=True, type=int)
+        parser.add_argument('--std_dev', required=True, type=float)
+        parser.add_argument('--limits', required=True, type=str)
+        known_args, _ = parser.parse_known_args()
+        dist = known_args.dist
+        samples = known_args.samples
+        std_dev = known_args.std_dev
+        limits = list(known_args.limits.split(';'))
+        limits_dict = {'x': [int(pos) for pos in (limits[0].split(','))],
+                       'y': [int(pos) for pos in (limits[1].split(','))],
+                       'z': [int(pos) for pos in (limits[2].split(','))]}
+        points = TrainingDataGenerator.random_distribution(samples, limits_dict, dist, std_dev)
+        if verbose:
+            print(samples, std_dev, limits_dict)
+            plot_points_3d(points)
+
+    return points
+
+cli()
+
+'''
 # TODO: check generator unexpected exhaustion
 class CubeDataGenerator(keras.utils.Sequence):
     """ Cube generator class for keras fit method """
@@ -117,3 +226,4 @@ class CubeDataGenerator(keras.utils.Sequence):
     def __len__(self):
         # Denotes the number of batches per epoch
         return self.datalen // self.batch_size
+'''
