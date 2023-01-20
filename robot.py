@@ -26,8 +26,6 @@ TODO:
 '''
 
 from math import pi
-import sys
-import numpy as np
 from forward_kinematics import ForwardKinematics
 from inverse_kinematics import ANN, FabrikInverseKinematics, AnnInverseKinematics
 from plot import plot_points_3d, plot_joint_points_3d
