@@ -8,37 +8,17 @@
 # pylint: disable=C0413 # imports should be placed at the top of the module
 
 '''
-      2y |          | 3y
-         |     l3   |
-         0-->-------0--> 3x
-        /  2x        \
-   y1| / l2        l4 \ |4y
-     |/                \|
-  1z 0-->1x          4z 0-->4x
-     |                 ----
-     | l1              |  |
-    /_\
-    \ /
-     |
-_____|_____
-
 TODO:
 1. read robot configuration (with angles limits) from file
 '''
 
 import argparse
-from math import pi
 import pandas as pd
 from inverse_kinematics import AnnInverseKinematics, FabrikInverseKinematics
 from plot import plot_points_3d, plot_joint_points_3d
 from position_generator import TrainingDataGenerator
 from forward_kinematics import ForwardKinematics
-
-# 6 DOF robot DH matrix, links lengths, workspace and joints limits
-dh_matrix = [[0, pi/2, 0, 0], [2, 0, 0, 0], [0, 2, 2, 2], [pi/2, 0, 0, 0]]
-effector_workspace_limits = {'x': [0,6], 'y': [-6,6], 'z': [-3,6]}
-links_lengths = [2, 2, 2, 2]
-
+from robot import Robot
 
 def cli_ikine(parser):
     """ Inverse kinematics CLI """
@@ -65,12 +45,12 @@ def cli_ikine(parser):
     joint_angles = []
     if ikine_method == 'ann':
         model = args.model
-        ik_engine = AnnInverseKinematics(dh_matrix, links_lengths, effector_workspace_limits)
+        ik_engine = AnnInverseKinematics(Robot.dh_matrix, Robot.links_lengths, Robot.effector_workspace_limits)
         ik_engine.load_model(model)
         joint_angles = [ik_engine.ikine([pos]) for pos in points]
 
     elif ikine_method == 'fabrik':
-        ik_engine = FabrikInverseKinematics(dh_matrix, links_lengths, effector_workspace_limits)
+        ik_engine = FabrikInverseKinematics(Robot.dh_matrix, Robot.links_lengths, Robot.effector_workspace_limits)
         joint_angles = [ik_engine.ikine(pos) for pos in points]
 
     if args.to_file is not None:
@@ -219,8 +199,8 @@ if __name__ == '__main__':
         predicted_points = []
         fkine = ForwardKinematics()
         for angles in angles_ik:
-            dh_matrix_out = [angles, *dh_matrix[1:]]
-            fk, _ = fkine.fkine(*dh_matrix_out)
+            Robot.dh_matrix_out = [angles, *Robot.dh_matrix[1:]]
+            fk, _ = fkine.fkine(*Robot.dh_matrix_out)
             predicted_points.append([fk[0,3], fk[1,3], fk[2,3]])
 
         plot_joint_points_3d(predicted_points, input_points)
