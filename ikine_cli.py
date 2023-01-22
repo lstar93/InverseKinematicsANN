@@ -23,7 +23,7 @@
 _____|_____
 
 TODO:
-1. read robot configuration (with angle limits) from file
+1. read robot configuration (with angles limits) from file
 '''
 
 import argparse
