@@ -2,8 +2,11 @@
 #!/usr/bin/env python
 
 import numpy.matlib
-# from mpl_toolkits.mplot3d import Axes3D # <--- This is important for 3d plotting ??? is it?
 import matplotlib.pyplot as plt
+
+def round_all_pts(axis, pts, upto = 3):
+    """ Rout all points to make them more plottable """
+    return [round(x[axis], upto) for x in pts]
 
 # helper metho to generate figure, colors and labels
 def figure(points):
@@ -18,11 +21,9 @@ def figure(points):
 
 def plot_points_3d(points, path=False):
     """ Plot poits cloud in 3D space """
-    points = list(points)
     _, axes, colors = figure(points)
 
-    round_pts = lambda ax: [round(x[ax], 1) for x in points]
-    rounded_points = [round_pts(0), round_pts(1), round_pts(2)]
+    rounded_points = [round_all_pts(0, points), round_all_pts(1, points), round_all_pts(2, points)]
 
     # add scatter plot for points
     for axe_x, axe_y, axe_z, color in zip(*rounded_points, colors):
@@ -40,7 +41,9 @@ def plot_joint_points_3d(points_first, points_sec, path=False):
     points_1 = list(points_sec)
     _, axes, colors = figure(points_0+points_1)
 
-    round_pts = lambda ax, pts: [round(x[ax], 1) for x in pts]
+    def round_pts(axis, pts):
+        return [round(x[axis], 1) for x in pts]
+
     rounded_points_0 = [round_pts(0, points_0), round_pts(1, points_0), round_pts(2, points_0)]
     rounded_points_1 = [round_pts(0, points_1), round_pts(1, points_1), round_pts(2, points_1)]
 
@@ -58,8 +61,8 @@ def plot_joint_points_3d(points_first, points_sec, path=False):
 
     plt.show()
 
-# matplotlib cannot resize all axes to the same scale so very small numbers make plots impossible to
-# thus all very small numbers will be rounded to 0 for plotting purposes only
+# matplotlib cannot resize all axes to the same scale so very small numbers make plots hard
+# to read, so all very small numbers will be rounded to 0 for plotting purposes only
 def plot_robot(joints, points = None):
     """ Plot robot view """
     rounding= 10 # set rounding to 10 decimal places for whole plot

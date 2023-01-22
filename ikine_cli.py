@@ -35,6 +35,7 @@ def cli_ikine(parser):
 
     parser.add_argument('--to-file', type=str)
     parser.add_argument('--verbose', action='store_true')
+    parser.add_argument('--show-path', action='store_true')
 
     args = parser.parse_args()
 
@@ -197,7 +198,10 @@ if __name__ == '__main__':
             fk, _ = fkine.fkine(*dh_matrix_out)
             predicted_points.append([fk[0,3], fk[1,3], fk[2,3]])
 
-        plot_joint_points_3d(predicted_points, input_points)
+        cli_known_args, _ = cliparser.parse_known_args()
+        show_path = cli_known_args.show_path
+
+        plot_joint_points_3d(predicted_points, input_points, show_path)
 
     elif cli_known_args.generate_data:
         cli_gen_data(cliparser)
