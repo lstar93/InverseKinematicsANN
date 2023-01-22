@@ -1,4 +1,4 @@
-""" Planar robot description """
+""" Planar robot """
 #!/usr/bin/env python
 
 # pylint: disable=W1401 # string constant might be pissing r prefix

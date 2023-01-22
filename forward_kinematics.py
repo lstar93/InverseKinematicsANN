@@ -24,7 +24,7 @@ class ForwardKinematics:
         if (angle < -2*pi) or (angle > 2*pi):
             raise Exception('Error, angle limits are (-2pi, 2pi)')
         if self.dh_features_size < 3:
-            raise Exception('Error, rotation matrix must be size of 3 or greater')
+            raise Exception('Error, rotation matrix must have size 3 or more')
 
         # Generate rotation matrix
         if rot_axis == 'x':
@@ -42,7 +42,7 @@ class ForwardKinematics:
         else:
             raise Exception('Unknown axis name, only x, y or z are supported')
 
-        # if size of robot features is bigger that rotation matrix shape
+        # if size of robot features is greater than rotation matrix shape size
         # make rotation matrix part of identity matrix beginning from the first element
         if self.dh_features_size == rot_mtx.shape[0]:
             return rot_axis
@@ -53,20 +53,20 @@ class ForwardKinematics:
     def translation_matrix(self, vect, axis='', angle=0):
         """ Create translation matrix -> move it by vector """
         # rtm -> rotation matrix, 4x4 identity matrix
-        # if any angle given just move matrix in 3D space
+        # if no angle given just move matrix
         if not axis:
             rtm = np.identity(self.dh_features_size)
         else:
             self.rotation_matrix(axis, angle)
         # repalce first 3 elems of last column with transposed vector x
-        # to move matrix by [x,y,z] vector in 3D space
+        # to move matrix by [x,y,z] vector
         for index, _ in enumerate(vect):
             rtm[index, len(vect)] = vect[index]
         return rtm
 
     # DH_i-1_i = Rt(Z, Oi) * Tr([0, 0, Ei]^T) * Tr([ai, 0, 0]^T) * Rt(X, Li)
     def transformation_matrix(self, theta_i, epsilon_i, a_i, alpha_i):
-        """ Create forward kinematics transformation matrix for single joint """
+        """ Create forward kinematics transformation matrix """
         rot_mtx_z_theta = self.rotation_matrix('z', theta_i)
         tr_mtx_epsilon = self.translation_matrix([0, 0, epsilon_i])
         tr_mtx_a = self.translation_matrix([a_i, 0, 0])

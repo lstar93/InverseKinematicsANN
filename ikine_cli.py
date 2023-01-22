@@ -45,12 +45,16 @@ def cli_ikine(parser):
     joint_angles = []
     if ikine_method == 'ann':
         model = args.model
-        ik_engine = AnnInverseKinematics(Robot.dh_matrix, Robot.links_lengths, Robot.effector_workspace_limits)
+        ik_engine = AnnInverseKinematics(Robot.dh_matrix,
+                                         Robot.links_lengths,
+                                         Robot.effector_workspace_limits)
         ik_engine.load_model(model)
         joint_angles = [ik_engine.ikine([pos]) for pos in points]
 
     elif ikine_method == 'fabrik':
-        ik_engine = FabrikInverseKinematics(Robot.dh_matrix, Robot.links_lengths, Robot.effector_workspace_limits)
+        ik_engine = FabrikInverseKinematics(Robot.dh_matrix,
+                                            Robot.links_lengths,
+                                            Robot.effector_workspace_limits)
         joint_angles = [ik_engine.ikine(pos) for pos in points]
 
     if args.to_file is not None:
@@ -173,17 +177,6 @@ def cli_gen_data(parser):
 
 if __name__ == '__main__':
     cliparser = argparse.ArgumentParser(prog='cli')
-
-    '''
-    parser.add_argument('--inverse-kine', required = True, action='store_true',
-                            help='use ANN or Fabrik to compute robot inverse kinematics')
-    parser.add_argument('--generate-data', action='store_true',
-                            help='use one of the available data generators to create tracjectory')
-
-    cliparser.add_argument('--execute', required = True, choices=['inverse_kine', 'generate_data'],
-                            help='use ANN or Fabrik to compute robot inverse kinematics \
-                                or choose generator and generate trajectory to csv file')
-    '''
     group = cliparser.add_mutually_exclusive_group()
     group.add_argument('--inverse-kine', action='store_true')
     group.add_argument('--generate-data', action='store_true')
@@ -200,8 +193,8 @@ if __name__ == '__main__':
         predicted_points = []
         fkine = ForwardKinematics()
         for angles in angles_ik:
-            Robot.dh_matrix_out = [angles, *Robot.dh_matrix[1:]]
-            fk, _ = fkine.fkine(*Robot.dh_matrix_out)
+            dh_matrix_out = [angles, *Robot.dh_matrix[1:]]
+            fk, _ = fkine.fkine(*dh_matrix_out)
             predicted_points.append([fk[0,3], fk[1,3], fk[2,3]])
 
         plot_joint_points_3d(predicted_points, input_points)

@@ -100,8 +100,8 @@ class FabrikInverseKinematics(InverseKinematics):
         if any(dp < limitv[1][0] or dp > limitv[1][1] for dp, limitv in zip(dest_point, self.workspace_limits.items())):
             raise Exception(f'Point {dest_point} is out of manipulator reach area! Limits: {self.workspace_limits}')
 
-        # FABRIK
-        theta_1 = float(atan2(dest_point[1], dest_point[0])) # compute theta_1 to omit horizontal move in FABRIK
+        # calculate theta_1 to get rid of horizontal move before FABRIK
+        theta_1 = float(atan2(dest_point[1], dest_point[0]))
         self.dh_matrix[0][0] = theta_1 # replace initial theta_1
 
         # Compute initial xyz possition of every robot joint
@@ -109,7 +109,11 @@ class FabrikInverseKinematics(InverseKinematics):
         init_joints_positions = [Point([x[0][3], x[1][3], x[2][3]]) for x in fk_all]
 
         # Compute joint positions using FABRIK
-        fab = Fabrik(init_joints_positions, self.joints_lengths, self.max_err, self.max_iterations_num)
+        fab = Fabrik(init_joints_positions,
+                     self.joints_lengths,
+                     self.max_err,
+                     self.max_iterations_num)
+
         goal_joints_positions = fab.calculate(dest_point)
 
         # Compute manipulator angles from FABRIK computed positions
