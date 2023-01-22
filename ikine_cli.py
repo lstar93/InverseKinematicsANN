@@ -108,11 +108,12 @@ def cli_gen_data(parser):
         if verbose:
             print(step, dim, start)
             plot_points_3d(points)
+        return points
 
     if known_args.shape == 'cube':
-        cube(TrainingDataGenerator.cube)
+        points = cube(TrainingDataGenerator.cube)
     elif known_args.shape == 'cube_random':
-        cube(TrainingDataGenerator.cube_random)
+        points = cube(TrainingDataGenerator.cube_random)
 
     # --generate-data --shape random --limits '0,3;0,4;0,5' --samples 20 --verbose
     if known_args.shape == 'random':
