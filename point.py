@@ -29,5 +29,5 @@ def get_point_between(start_point, end_point, distance):
     def coords(start_point_axis, end_point_axis):
         return start_point_axis + ((distance/get_distance_between(start_point, end_point))*(end_point_axis - start_point_axis))
     return Point([coords(start_point.x, end_point.x),
-                coords(start_point.y, end_point.y),
-                coords(start_point.z, end_point.z)])
+                  coords(start_point.y, end_point.y),
+                  coords(start_point.z, end_point.z)])
