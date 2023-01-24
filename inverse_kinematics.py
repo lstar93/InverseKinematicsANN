@@ -20,7 +20,6 @@ class InverseKinematics:
         self.joints_lengths = joints_lengths
         self.workspace_limits = workspace_limits
         self.fkine = ForwardKinematics()
-        # self.first_rev_joint_point = Point([0,0,dh_matrix[0]])
 
     # use one of methods to compute inverse kinematics
     def ikine(self, dest_point):
@@ -37,7 +36,8 @@ class FabrikInverseKinematics(InverseKinematics):
     def __fabrik(self, joints_goal_points):
         """ Calculate angles from cosine theorem """
         # theta_1 is horizontal angle and is calculated from arcus tangens
-        # ensures that arm is faced into goal point direction
+        # ensures that arm is faced into goal point direction before
+        # vertical angles are calculated
 
         theta_1 = float(atan2(joints_goal_points[3].y, joints_goal_points[3].x))
 
@@ -88,6 +88,7 @@ class FabrikInverseKinematics(InverseKinematics):
             theta_4 = -(pi - acos_t4)
         else:
             theta_4 = (pi - acos_t4)
+        # todo: n-th theta
 
         return [theta_1, theta_2, theta_3, theta_4],\
                [base, first_triangle, second_triangle, third_triangle],\
