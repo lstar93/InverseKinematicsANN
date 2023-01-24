@@ -1,6 +1,8 @@
 """ FABRIK algorithm """
 #!/usr/bin/env python
 
+# pylint: disable=W0511 # suppress TODOs
+
 from point import Point, get_distance_between, get_point_between
 
 # Keep some prints, but show them only if necessary
