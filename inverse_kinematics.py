@@ -32,20 +32,21 @@ class FabrikInverseKinematics(InverseKinematics):
         super().__init__(dh_matrix, joints_lengths, workspace_limits)
         self.max_err = max_err
         self.max_iterations_num = max_iterations_num
+        self.current_joints_positions = []
 
-    def __fabrik(self, joints_goal_points):
+    def __get_angles(self, joints_goal_positions):
         """ Calculate angles from cosine theorem """
         # theta_1 is horizontal angle and is calculated from arcus tangens
         # ensures that arm is faced into goal point direction before
         # vertical angles are calculated
 
-        theta_1 = float(atan2(joints_goal_points[3].y, joints_goal_points[3].x))
+        theta_1 = float(atan2(joints_goal_positions[3].y, joints_goal_positions[3].x))
 
         # set rounding up to x decimal places to prevent math error
         rounding_upto = 8
 
         point_a = Point([0, 0, 0])
-        point_b, point_c, point_d, point_e = joints_goal_points
+        point_b, point_c, point_d, point_e = joints_goal_positions
         # todo: n-th point
 
         base = [point_a, point_b]
@@ -90,9 +91,14 @@ class FabrikInverseKinematics(InverseKinematics):
             theta_4 = (pi - acos_t4)
         # todo: n-th theta
 
+        self.current_joints_positions = [point_a, *joints_goal_positions]
+
         return [theta_1, theta_2, theta_3, theta_4],\
-               [base, first_triangle, second_triangle, third_triangle],\
-               [point_a, *joints_goal_points]
+               [base, first_triangle, second_triangle, third_triangle]
+
+    def get_current_joints_positions(self):
+        """ Get list with current (x,y,z) positions of all robot joints """
+        return self.current_joints_positions
 
     # use one of methods to calculate inverse kinematics
     def ikine(self, dest_point):
@@ -121,12 +127,12 @@ class FabrikInverseKinematics(InverseKinematics):
                      self.max_err,
                      self.max_iterations_num)
 
-        goal_joints_positions = fab.calculate(dest_point)
+        positions_from_fabrik = fab.calculate(dest_point)
 
         # calculate manipulator angles using FABRIK
-        ik_angles, _, robot = self.__fabrik(goal_joints_positions)
+        ik_angles, _ = self.__get_angles(positions_from_fabrik)
 
-        return ik_angles, robot
+        return ik_angles
 
 class AnnInverseKinematics(InverseKinematics):
     """ reaching inverse kinematics using Artificial NN method """

@@ -36,6 +36,7 @@ def cli_ikine(parser):
     parser.add_argument('--to-file', type=str)
     parser.add_argument('--verbose', action='store_true')
     parser.add_argument('--show-path', action='store_true')
+    parser.add_argument('--separate-plots', action='store_true')
 
     args = parser.parse_args()
 
@@ -87,7 +88,7 @@ def cli_gen_data(parser):
 
     # --generate-data --shape circle --radius 3 --samples 20 --centre '1,11,2' --verbose
     if known_args.shape == 'circle':
-        parser.add_argument('--radius', required=True, type=int)
+        parser.add_argument('--radius', required=True, type=float)
         parser.add_argument('--samples', required=True, type=int)
         parser.add_argument('--centre', required=True, type=str)
         known_args, _ = parser.parse_known_args()
@@ -201,7 +202,11 @@ if __name__ == '__main__':
         cli_known_args, _ = cliparser.parse_known_args()
         show_path = cli_known_args.show_path
 
-        plot_joint_points_3d(predicted_points, input_points, show_path)
+        if not cli_known_args.separate_plots:
+            plot_joint_points_3d(predicted_points, input_points, show_path)
+        else:
+            plot_points_3d(input_points, show_path, dot_color='b')
+            plot_points_3d(predicted_points, show_path, dot_color='r')
 
     elif cli_known_args.generate_data:
         cli_gen_data(cliparser)
