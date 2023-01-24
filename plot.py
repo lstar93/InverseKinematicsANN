@@ -4,14 +4,14 @@
 import numpy.matlib
 import matplotlib.pyplot as plt
 
-def round_all_pts(axis, pts, upto = 3):
+def round_all_pts(axis, pts, upto = 2):
     """ Rout all points to make them more plottable """
     return [round(x[axis], upto) for x in pts]
 
 # helper metho to generate figure, colors and labels
-def figure(points):
+def figure(points, size=(5,5)):
     """ Create 3D figure """
-    fig = plt.figure()
+    fig = plt.figure(figsize=size)
     axes = fig.add_subplot(111, projection='3d')
     axes.set_xlabel('X')
     axes.set_ylabel('Y')
@@ -19,9 +19,11 @@ def figure(points):
     colors = [list(x) for x in numpy.random.rand(len(points), 3)]
     return fig, axes, colors
 
-def plot_points_3d(points, path=False):
+def plot_points_3d(points, path=False, dot_color = ''):
     """ Plot poits cloud in 3D space """
     _, axes, colors = figure(points)
+    if dot_color != '':
+        colors = [dot_color for _ in colors]
 
     rounded_points = [round_all_pts(0, points), round_all_pts(1, points), round_all_pts(2, points)]
 
@@ -31,7 +33,7 @@ def plot_points_3d(points, path=False):
 
     # optionally add path connecting points
     if path:
-        axes.plot(*rounded_points, color='r')
+        axes.plot(*rounded_points, color=dot_color)
 
     plt.show()
 
@@ -63,26 +65,26 @@ def plot_joint_points_3d(points_first, points_sec, path=False):
 
 # matplotlib cannot resize all axes to the same scale so very small numbers make plots hard
 # to read, so all very small numbers will be rounded to 0 for plotting purposes only
-def plot_robot(joints, points = None):
+def plot_robot(joints, goal_points = None):
     """ Plot robot view """
-    rounding= 10 # set rounding to 10 decimal places for whole plot
-    _, axes, colors = figure(points)
+    # rounding = 10 # set rounding to 10 decimal places for whole plot
+    _, axes, colors = figure(joints)
 
-    for joint, color in zip(joints, colors[0:len(joints)]):
-        axes.scatter([round(x.x, rounding) for x in joint],
-        [round(x.y, rounding) for x in joint],
-        [round(x.z, rounding) for x in joint],
-        color=color)
+    points = [pt.to_list() for pt in joints]
+    rounded_points = [round_all_pts(0, points), round_all_pts(1, points), round_all_pts(2, points)]
 
-        axes.plot3D([round(x.x, rounding) for x in joint],
-        [round(x.y, rounding) for x in joint],
-        [round(x.z, rounding) for x in joint],
-        color=color)
+    axes.set_xlim(-3,3)
+    axes.set_ylim(-3,3)
+    axes.set_zlim(-3,3)
 
-    for point, color in zip(points, colors[len(joints):]):
-        axes.scatter(round(point.x, rounding),
-        round(point.y, rounding),
-        round(point.z, rounding),
-        color=color)
+    # add scatter plot for points
+    for axe_x, axe_y, axe_z, color in zip(*rounded_points, colors):
+        axes.scatter(axe_x, axe_y, axe_z, color=color)
+
+    axes.plot(*rounded_points, color='r')
+
+    if goal_points is not None:
+        rounded_goal_points = [round_all_pts(0, goal_points), round_all_pts(1, goal_points), round_all_pts(2, goal_points)]
+        axes.scatter(*rounded_goal_points, color='b')
 
     plt.show()

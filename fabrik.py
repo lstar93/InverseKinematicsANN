@@ -12,8 +12,9 @@ def print_debug_msg(msg, verbose=VERBOSE):
 
 class Fabrik:
     """ FABRIK stands from forward and backward reaching inverse kinematics ->\
-            https://www.youtube.com/watch?v=UNoX65PRehA&feature=emb_title """
-    def __init__(self, init_joints_positions, joint_distances, 
+            https://www.youtube.com/watch?v=UNoX65PRehA&feature=emb_title 
+            https://www.academia.edu/9165835/FABR...matics_problem """
+    def __init__(self, init_joints_positions, joint_distances,
                     err_margin = 0.001, max_iter_num = 100):
         self.joint_distances = joint_distances
         self.init_joints_positions = init_joints_positions
@@ -28,7 +29,9 @@ class Fabrik:
         positions = list(reversed(points[:-1]))
         distances = list(reversed(self.joint_distances[:-1]))
         for next_point, distance in zip(positions, distances):
-            points_to_ret.append(get_point_between(points_to_ret[-1], next_point, distance))
+            middle_stage = get_point_between(points_to_ret[-1], next_point, distance)
+            # todo: check middle stage boundries
+            points_to_ret.append(middle_stage)
         return list(reversed(points_to_ret))
 
     # Compute forward iteration
@@ -39,7 +42,9 @@ class Fabrik:
         positions = points[1:]
         distances = self.joint_distances[1:]
         for next_point, distance in zip(positions, distances):
-            points_to_ret.append(get_point_between(points_to_ret[-1], next_point, distance))
+            middle_stage = get_point_between(points_to_ret[-1], next_point, distance)
+            # todo: check middle stage boundries
+            points_to_ret.append(middle_stage)
         return points_to_ret
 
     def calculate(self, goal_eff_pos):
@@ -50,13 +55,13 @@ class Fabrik:
 
         current_join_positions = self.init_joints_positions
         start_point = self.init_joints_positions[0]
-        joints_goal_points = Point([x for x in goal_eff_pos])
+        joints_goal_points = Point(goal_eff_pos)
         start_error = 1
         goal_error = 1
         step = 0
 
-        while (((start_error > self.err_margin) 
-                or (goal_error > self.err_margin)) 
+        while (((start_error > self.err_margin)
+                or (goal_error > self.err_margin))
                     and (self.max_iter_num > step)):
             backward = self.__backward(current_join_positions, joints_goal_points)
             start_error = get_distance_between(backward[0], start_point)
