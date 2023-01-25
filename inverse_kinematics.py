@@ -25,6 +25,9 @@ class InverseKinematics:
     def ikine(self, dest_point):
         """ Calculate inverse kinematics """
 
+
+# todo: fabric for any planar robot
+# Now Fabrik class is designed only for 6DOF planar robot
 class FabrikInverseKinematics(InverseKinematics):
     """ Reaching inverse kinematics using Fabrik method """
     def __init__(self, dh_matrix, joints_lengths, workspace_limits,
@@ -133,6 +136,7 @@ class FabrikInverseKinematics(InverseKinematics):
         ik_angles, _ = self.__get_angles(positions_from_fabrik)
 
         return ik_angles
+
 
 class AnnInverseKinematics(InverseKinematics):
     """ reaching inverse kinematics using Artificial NN method """
