@@ -2,11 +2,13 @@
 #!/usr/bin/env python
 
 # pylint: disable=W0212 # suppress protected access
-# pylint: disable=W0105 # disable unnecesary strings warning
+# pylint: disable=W0105 # unnecesary strings warning
+# pylint: disable=W0613 # unused argument
 
 import json
 from uuid import uuid4
 from pika import BlockingConnection, ConnectionParameters, BasicProperties
+
 
 class IkineRPCClient:
     """ Ikine RPC client """
@@ -27,7 +29,7 @@ class IkineRPCClient:
 
     def on_response(self, chan, method, props, body):
         """ Request/response data handler """
-        # if response correlation id match arrach body to response
+        # if response correlation id match atach body to response
         if self.corr_id == props.correlation_id:
             self.response = body
 
@@ -46,6 +48,7 @@ class IkineRPCClient:
         )
         self.connection.process_data_events(time_limit=None)
         return str(self.response)
+
 
 if __name__ == '__main__':
     client = IkineRPCClient()
