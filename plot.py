@@ -84,7 +84,9 @@ def plot_robot(joints, goal_points = None):
     axes.plot(*rounded_points, color='r')
 
     if goal_points is not None:
-        rounded_goal_points = [round_all_pts(0, goal_points), round_all_pts(1, goal_points), round_all_pts(2, goal_points)]
+        rounded_goal_points = [round_all_pts(0, goal_points),
+                               round_all_pts(1, goal_points),
+                               round_all_pts(2, goal_points)]
         axes.scatter(*rounded_goal_points, color='b')
 
     plt.show()

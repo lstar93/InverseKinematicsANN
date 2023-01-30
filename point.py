@@ -1,7 +1,7 @@
 """ Simple 3D point representation """
 #!/usr/bin/env python
 
-# pylint: disable=C0103 # suppress invalid name for x,y and z
+# pylint: disable=C0103 # suppress invalid name for x, y and z
 
 from math import sqrt
 
