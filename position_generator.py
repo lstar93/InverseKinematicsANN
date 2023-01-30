@@ -26,7 +26,7 @@ class TrainingDataGenerator:
     def circle(radius, no_of_samples, centre):
         """ Circle shape """
         def generate_shape(tstamp):
-            return [centre[0], centre[1] + sin(tstamp), centre[2] + radius*cos(tstamp)]
+            return [centre[0], centre[1] + radius*sin(tstamp), centre[2] + radius*cos(tstamp)]
         return [generate_shape(t) for t in range(no_of_samples)]
 
     @staticmethod
