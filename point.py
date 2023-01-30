@@ -28,15 +28,15 @@ def get_distance_between(point_a, point_b):
                 pow((point_a.z - point_b.z), 2))
 
 def get_point_between(start_point, end_point, distance = None):
-    """ Calculate coordinates of Point between two other points \
-            or coordinates of point in given distance from other point """
-
-    # if distance is not given use middle position
+    """ Calculate coordinates of Point in given distance or between two other points"""
+    # default distance is position exactlly in the middle between points
     if distance is None:
-        between = get_distance_between(start_point, end_point)/2
+        distance = get_distance_between(start_point, end_point)/2
 
     def coords(start_point_axis, end_point_axis):
-        return start_point_axis + ((distance/between)*(end_point_axis - start_point_axis))
+        return start_point_axis + \
+            ((distance/get_distance_between(start_point, end_point)) * \
+            (end_point_axis - start_point_axis))
 
     return Point([coords(start_point.x, end_point.x),
                   coords(start_point.y, end_point.y),

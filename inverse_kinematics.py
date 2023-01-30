@@ -22,7 +22,7 @@ class InverseKinematics:
         self.fkine = ForwardKinematics()
 
     # use one of methods to compute inverse kinematics
-    def ikine(self, dest_point):
+    def ikine(self, dest_points):
         """ Calculate inverse kinematics """
 
 
@@ -104,38 +104,41 @@ class FabrikInverseKinematics(InverseKinematics):
         return self.current_joints_positions
 
     # use one of methods to calculate inverse kinematics
-    def ikine(self, dest_point):
+    def ikine(self, dest_points):
         """ Calculate inverse kinematics """
-        # Effector limits check
-        if any(dp < limitv[1][0] or dp > limitv[1][1] for dp, limitv in zip(dest_point, self.workspace_limits.items())):
-            raise Exception(f'Point {dest_point} is out of manipulator reach area! Limits: {self.workspace_limits}')
+        ik_angles_ret = []
+        for dest_point in dest_points:
+            # Effector limits check
+            if any(dp < limitv[1][0] or dp > limitv[1][1] for dp, limitv in zip(dest_point, self.workspace_limits.items())):
+                raise Exception(f'Point {dest_point} is out of manipulator reach area! Limits: {self.workspace_limits}')
 
-        # calculate theta_1 to get rid of horizontal move before FABRIK
-        # theta_1 = float(atan2(dest_point[1], dest_point[0]))
-        #if dest_point[1] >= 0:
-        theta_1 = float(atan2(dest_point[1], dest_point[0]))
-        #else:
-        #    theta_1 = 2*pi + float(atan2(dest_point[1], dest_point[0]))
-        self.dh_matrix[0][0] = theta_1 # replace initial theta_1
+            # calculate theta_1 to get rid of horizontal move before FABRIK
+            # theta_1 = float(atan2(dest_point[1], dest_point[0]))
+            #if dest_point[1] >= 0:
+            theta_1 = float(atan2(dest_point[1], dest_point[0]))
+            #else:
+            #    theta_1 = 2*pi + float(atan2(dest_point[1], dest_point[0]))
+            self.dh_matrix[0][0] = theta_1 # replace initial theta_1
 
-        # calculate initial xyz possition of every robot joint
-        _, fk_all = self.fkine.fkine(*self.dh_matrix)
+            # calculate initial xyz possition of every robot joint
+            _, fk_all = self.fkine.fkine(*self.dh_matrix)
 
-        # init_joints_positions = [Point([1,0,4]), Point([2,0,6]), Point([4,0,5]), Point([6,0,3])]
-        init_joints_positions = [Point([x[0][3], x[1][3], x[2][3]]) for x in fk_all]
+            # init_joints_positions = [Point([1,0,4]), Point([2,0,6]), Point([4,0,5]), Point([6,0,3])]
+            init_joints_positions = [Point([x[0][3], x[1][3], x[2][3]]) for x in fk_all]
 
-        # calculate joint positions using FABRIK
-        fab = Fabrik(init_joints_positions,
-                     self.joints_lengths,
-                     self.max_err,
-                     self.max_iterations_num)
+            # calculate joint positions using FABRIK
+            fab = Fabrik(init_joints_positions,
+                        self.joints_lengths,
+                        self.max_err,
+                        self.max_iterations_num)
 
-        positions_from_fabrik = fab.calculate(dest_point)
+            positions_from_fabrik = fab.calculate(dest_point)
 
-        # calculate manipulator angles using FABRIK
-        ik_angles, _ = self.__get_angles(positions_from_fabrik)
+            # calculate manipulator angles using FABRIK
+            ik_angles, _ = self.__get_angles(positions_from_fabrik)
+            ik_angles_ret.append(ik_angles)
 
-        return ik_angles
+        return ik_angles_ret
 
 
 class AnnInverseKinematics(InverseKinematics):
@@ -148,13 +151,6 @@ class AnnInverseKinematics(InverseKinematics):
         """ Load model from .h5 file """
         self.ann.load_model(model_name)
 
-    def ikine(self, dest_point, single_prediction = False):
+    def ikine(self, dest_points):
         """ Predict thetas using neural network """
-        ik_angles = []
-        if single_prediction:
-            ik_angles = self.ann.predict(dest_point).tolist()
-        else:
-            for sample in dest_point:
-                ik_angles.append(self.ann.predict([sample]).tolist()[0])
-            return ik_angles[0]
-        return ik_angles
+        return self.ann.predict(dest_points).tolist()

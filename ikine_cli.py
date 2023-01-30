@@ -28,7 +28,7 @@ def cli_ikine(parser):
     known_args, _ = parser.parse_known_args()
     if known_args.method == 'ann':
         parser.add_argument('--model', type=str, required=True,
-                    help='select .h5 file with saved mode, required only if ann was choosed')
+                    help='select .h5 file with saved model, required only if ann was choosed')
 
     parser.add_argument('--points', type=str, required=True,
                             help='.csv file name with stored trajectory points')
@@ -57,7 +57,7 @@ def cli_ikine(parser):
         ik_engine = FabrikInverseKinematics(Robot.dh_matrix,
                                             Robot.links_lengths,
                                             Robot.effector_workspace_limits)
-        joint_angles = [ik_engine.ikine(pos) for pos in points]
+        joint_angles = [ik_engine.ikine([pos]) for pos in points]
 
     if args.to_file is not None:
         pd.DataFrame(joint_angles,
