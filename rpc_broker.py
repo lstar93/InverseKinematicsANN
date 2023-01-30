@@ -50,7 +50,7 @@ class IkineRPCBroker:
         # set engine
         self.__ikine = ikine
         # Open connection and channel
-        self.__connection = BlockingConnection(ConnectionParameters(host_ip))
+        self.__connection = BlockingConnection(ConnectionParameters(host=host_ip))
         self.__channel = self.__connection.channel()
         # define queue
         self.__queue = self.__channel.queue_declare(queue=queue_name)

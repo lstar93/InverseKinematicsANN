@@ -12,8 +12,8 @@ from pika import BlockingConnection, ConnectionParameters, BasicProperties
 
 class IkineRPCClient:
     """ Ikine RPC client """
-    def __init__(self):
-        self.connection = BlockingConnection(ConnectionParameters(host='localhost'))
+    def __init__(self, host_ip = 'localhost'):
+        self.connection = BlockingConnection(ConnectionParameters(host=host_ip))
         self.channel = self.connection.channel()
 
         result = self.channel.queue_declare(queue='', exclusive=True)
@@ -33,13 +33,13 @@ class IkineRPCClient:
         if self.corr_id == props.correlation_id:
             self.response = body
 
-    def call(self, pos_json):
+    def call(self, pos_json, routing_key = 'ikine_queue'):
         """ Call to ikine server """
         self.response = None
         self.corr_id = str(uuid4())
         self.channel.basic_publish(
             exchange='',
-            routing_key='ikine_queue',
+            routing_key=routing_key,
             properties=BasicProperties(
                 reply_to=self.callback_queue,
                 correlation_id=self.corr_id
