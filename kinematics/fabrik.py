@@ -3,7 +3,7 @@
 
 # pylint: disable=W0511 # suppress TODOs
 
-from point import Point, get_distance_between, get_point_between
+from kinematics.point import Point, get_distance_between, get_point_between
 
 # Keep some prints, but show them only if necessary
 VERBOSE = False
