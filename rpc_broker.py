@@ -11,8 +11,14 @@ import argparse
 import json
 from pika import BlockingConnection, ConnectionParameters, BasicProperties
 from kinematics.inverse import FabrikInverseKinematics, AnnInverseKinematics
-from robot.robot import Robot
+from robot.robot import SixDOFRobot as Robot
+from robot.robot import OutOfRobotReachException
 
+DEBUG_MSG = False
+def debug_msg_print(msg):
+    """ broker debug printouts """
+    if DEBUG_MSG:
+        print(msg)
 
 def get_ikine_engine_cli():
     """ Setup ikine engine via CLI """
@@ -38,10 +44,9 @@ def get_ikine_engine_cli():
 
     if ikine_method == 'fabrik':
         engine = FabrikInverseKinematics(Robot.dh_matrix,
-                        Robot.links_lengths,
-                        Robot.effector_workspace_limits)
+                                         Robot.links_lengths,
+                                         Robot.effector_workspace_limits)
     return engine
-
 
 class IkineRPCBroker:
     """ RPC channel callback wrapper """
@@ -58,16 +63,37 @@ class IkineRPCBroker:
         self.__channel.basic_qos(prefetch_count=1)
         self.__channel.basic_consume(queue=queue_name, on_message_callback=self.callback)
 
+    def __exception_response(self, status, reason, corr_id):
+        """ Exception handler """
+        return {'status' : status,
+                'reason' : str(reason),
+                'correlation_id' : corr_id}
+
     def callback(self, chan, method, props, body):
         """ Ikine rpc server callback """
         positions_json = json.loads(body.decode())
         positions = list(positions_json['positions'])
-        # calculate inverse kinematics
-        angles = self.__ikine.ikine(positions)
-        # create response json
+
+        # create empty response dictionary
         angles_dict = dict()
+
+        # calculate inverse kinematics
+        try:
+            angles = self.__ikine.ikine(positions)
+            angles_dict['status'] = 'OK'
+        except OutOfRobotReachException as exception:
+            debug_msg_print(str(exception))
+            angles = None
+            angles_dict = self.__exception_response('ERROR', str(exception), props.correlation_id)
+        except TypeError as type_exception:
+            debug_msg_print(str(type_exception))
+            angles = None
+            angles_dict = self.__exception_response('ERROR', str(exception), props.correlation_id)
+
+        # create response json from dict
         angles_dict['angles'] = angles
         angles_json = json.dumps(angles_dict)
+
         # return angles to client
         chan.basic_publish(exchange='',
                            routing_key=props.reply_to,

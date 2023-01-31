@@ -247,8 +247,8 @@ def cli_ikine(parser):
                                                 Robot.links_lengths,
                                                 Robot.effector_workspace_limits)
             joint_angles = ik_engine.ikine(points)
-    except OutOfRobotReachException as exception:
-        print(str(exception))
+    except OutOfRobotReachException as ikine_exception:
+        print(str(ikine_exception))
 
     if args.to_file is not None:
         pd.DataFrame(joint_angles,
@@ -284,8 +284,8 @@ if __name__ == '__main__':
             for angles in angles_ik:
                 fk, _ = fkine.fkine(angles)
                 predicted_points.append([fk[0,3], fk[1,3], fk[2,3]])
-        except OutOfRobotReachException as oore:
-            print(str(oore))
+        except OutOfRobotReachException as fkine_exception:
+            print(str(fkine_exception))
 
         cli_known_args, _ = cliparser.parse_known_args()
         show_path = cli_known_args.show_path
