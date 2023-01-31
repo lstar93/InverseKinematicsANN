@@ -9,11 +9,11 @@
 
 import argparse
 import pandas as pd
-from inverse_kinematics import AnnInverseKinematics, FabrikInverseKinematics
-from plot import plot_points_3d, plot_joint_points_3d
-from position_generator import TrainingDataGenerator
-from forward_kinematics import ForwardKinematics
-from robot import Robot
+from kinematics.forward import ForwardKinematics
+from kinematics.inverse import AnnInverseKinematics, FabrikInverseKinematics
+from plot.plot import plot_points_3d, plot_joint_points_3d
+from robot.position_generator import TrainingDataGenerator
+from robot.robot import Robot
 
 
 def cli_ikine(parser):

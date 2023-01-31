@@ -10,8 +10,8 @@ import os
 import argparse
 import json
 from pika import BlockingConnection, ConnectionParameters, BasicProperties
-from inverse_kinematics import FabrikInverseKinematics, AnnInverseKinematics
-from robot import Robot
+from kinematics.inverse import FabrikInverseKinematics, AnnInverseKinematics
+from robot.robot import Robot
 
 
 def get_ikine_engine_cli():

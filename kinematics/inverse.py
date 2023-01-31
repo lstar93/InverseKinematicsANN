@@ -5,10 +5,10 @@
 
 from math import pi, atan2, acos
 import numpy as np
-from forward_kinematics import ForwardKinematics
-from fabrik import Fabrik
-from ann import ANN
-from point import Point, get_distance_between, get_point_between
+from kinematics.forward import ForwardKinematics
+from kinematics.fabrik import Fabrik
+from kinematics.ann import ANN
+from kinematics.point import Point, get_distance_between, get_point_between
 
 # supress printing enormous small numbers like 0.123e-16
 np.set_printoptions(suppress=True)
