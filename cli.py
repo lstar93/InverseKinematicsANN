@@ -11,7 +11,7 @@ import argparse
 import pandas as pd
 from kinematics.forward import ForwardKinematics
 from kinematics.inverse import AnnInverseKinematics, FabrikInverseKinematics
-from plot.plot import plot_points_3d, plot_joint_points_3d
+from plot.plot import Plotter
 from robot.position_generator import TrainingDataGenerator
 from robot.robot import Robot
 
@@ -94,7 +94,7 @@ def cli_gen_data(parser):
         points = TrainingDataGenerator.circle(radius, samples, centre)
         if verbose:
             print(radius, samples, centre)
-            plot_points_3d(points)
+            Plotter.plot_points_3d(points)
 
     # --generate-data --shape cube --step 0.75 --dim '2,3,4' --start '1,2,3' --verbose
     # --generate-data --shape cube_random --step 0.75 --dim '2,3,4' --start '1,2,3' --verbose
@@ -109,7 +109,7 @@ def cli_gen_data(parser):
         points = generator(step, *dim, start)
         if verbose:
             print(step, dim, start)
-            plot_points_3d(points)
+            Plotter.plot_points_3d(points)
         return points
 
     if known_args.shape == 'cube':
@@ -130,7 +130,7 @@ def cli_gen_data(parser):
         points = TrainingDataGenerator.random(samples, limits_dict)
         if verbose:
             print(samples, limits_dict)
-            plot_points_3d(points)
+            Plotter.plot_points_3d(points)
 
     # --generate-data --shape spring --samples 50 --dim '2,3,6' --verbose
     if known_args.shape == 'spring':
@@ -142,7 +142,7 @@ def cli_gen_data(parser):
         points = TrainingDataGenerator.spring(samples, *dim)
         if verbose:
             print(samples, dim)
-            plot_points_3d(points)
+            Plotter.plot_points_3d(points)
 
     # --generate-data --shape random_dist --dist 'normal' \
     #   --samples 100 --std_dev 0.35 --limits '0,3;0,4;0,5' --verbose
@@ -167,7 +167,7 @@ def cli_gen_data(parser):
         points = TrainingDataGenerator.random_distribution(samples, limits_dict, dist, std_dev)
         if verbose:
             print(samples, std_dev, limits_dict)
-            plot_points_3d(points)
+            Plotter.plot_points_3d(points)
 
     if filename is not None:
         pd.DataFrame(points, columns=['x', 'y', 'z']).to_csv(filename, index=False)
@@ -199,10 +199,10 @@ if __name__ == '__main__':
         show_path = cli_known_args.show_path
 
         if not cli_known_args.separate_plots:
-            plot_joint_points_3d(predicted_points, input_points, show_path)
+            Plotter.plot_joint_points_3d(predicted_points, input_points, show_path)
         else:
-            plot_points_3d(input_points, show_path, dot_color='b')
-            plot_points_3d(predicted_points, show_path, dot_color='r')
+            Plotter.plot_points_3d(input_points, show_path, dot_color='b')
+            Plotter.plot_points_3d(predicted_points, show_path, dot_color='r')
 
     elif cli_known_args.generate_data:
         cli_gen_data(cliparser)

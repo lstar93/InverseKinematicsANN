@@ -4,89 +4,100 @@
 import numpy.matlib
 import matplotlib.pyplot as plt
 
-def round_all_pts(axis, pts, upto = 2):
-    """ Rout all points to make them more plottable """
-    return [round(x[axis], upto) for x in pts]
+class Plotter:
+    """ Plotter class """
+    limits = []
 
-# helper metho to generate figure, colors and labels
-def figure(points, size=(5,5)):
-    """ Create 3D figure """
-    fig = plt.figure(figsize=size)
-    axes = fig.add_subplot(111, projection='3d')
-    axes.set_xlabel('X')
-    axes.set_ylabel('Y')
-    axes.set_zlabel('Z')
-    colors = [list(x) for x in numpy.random.rand(len(points), 3)]
-    return fig, axes, colors
+    @staticmethod
+    def __round_all_pts(axis, pts, upto = 5):
+        """ Round all points to make them more plottable """
+        return [round(x[axis], upto) for x in pts]
 
-def plot_points_3d(points, path=False, dot_color = ''):
-    """ Plot poits cloud in 3D space """
-    _, axes, colors = figure(points)
-    if dot_color != '':
-        colors = [dot_color for _ in colors]
+    @staticmethod
+    def __figure(points, size=(5,5)):
+        """ Create 3D figure, initialize axes and set labels and colors """
+        fig = plt.figure(figsize=size)
+        axes = fig.add_subplot(111, projection='3d')
+        axes.set_xlabel('X')
+        axes.set_ylabel('Y')
+        axes.set_zlabel('Z')
+        colors = [list(x) for x in numpy.random.rand(len(points), 3)]
+        return fig, axes, colors
 
-    rounded_points = [round_all_pts(0, points), round_all_pts(1, points), round_all_pts(2, points)]
+    @staticmethod
+    def __set_axes_limits(axes):
+        if len(Plotter.limits) == 3:
+            axes.set_xlim(*Plotter.limits[0])
+            axes.set_ylim(*Plotter.limits[1])
+            axes.set_zlim(*Plotter.limits[2])
 
-    # add scatter plot for points
-    for axe_x, axe_y, axe_z, color in zip(*rounded_points, colors):
-        axes.scatter(axe_x, axe_y, axe_z, color=color)
+    @staticmethod
+    def set_limits(limx, limy, limz):
+        """ Set plot limits """
+        Plotter.limits = [limx, limy, limz]
 
-    # optionally add path connecting points
-    if path:
-        axes.plot(*rounded_points, color=dot_color)
+    @staticmethod
+    def plot_points_scatter(axes, points, points_colors, path=False):
+        """ Simple scatter with previously rounded points """
+        rounded_points = [Plotter.__round_all_pts(0, points),
+                          Plotter.__round_all_pts(1, points),
+                          Plotter.__round_all_pts(2, points)]
+        # add scatter plot for points
+        axes.scatter(*rounded_points, color=points_colors)
 
-    plt.show()
+        # optionally add path connecting points
+        if path:
+            axes.plot(*rounded_points, color=points_colors)
 
-def plot_joint_points_3d(points_first, points_sec, path=False):
-    """ Plot poits clouds in 3D space """
-    points_0 = list(points_first)
-    points_1 = list(points_sec)
-    _, axes, colors = figure(points_0+points_1)
+    @staticmethod
+    def plot_points_3d(points, path=False, dot_color=None):
+        """ Plot poits cloud in 3D space """
+        _, axes, colors = Plotter.__figure(points)
 
-    def round_pts(axis, pts):
-        return [round(x[axis], 1) for x in pts]
+        Plotter.__set_axes_limits(axes)
 
-    rounded_points_0 = [round_pts(0, points_0), round_pts(1, points_0), round_pts(2, points_0)]
-    rounded_points_1 = [round_pts(0, points_1), round_pts(1, points_1), round_pts(2, points_1)]
+        dot_colors = [dot_color for _ in colors] if dot_color is not None else colors
 
-    # add scatter plot for points
-    for axe_x, axe_y, axe_z, _ in zip(*rounded_points_0, colors):
-        axes.scatter(axe_x, axe_y, axe_z, color='r')
+        Plotter.plot_points_scatter(axes, points, dot_colors, path)
 
-    for axe_x, axe_y, axe_z, _ in zip(*rounded_points_1, colors):
-        axes.scatter(axe_x, axe_y, axe_z, color='b')
+        plt.show()
 
-    # optionally add path connecting points
-    if path:
-        axes.plot(*rounded_points_0, color='r')
-        axes.plot(*rounded_points_1, color='b')
+    @staticmethod
+    def plot_joint_points_3d(points_first, points_second, path=False):
+        """ Plot poits clouds in 3D space """
+        points_0 = list(points_first)
+        points_1 = list(points_second)
+        _, axes, _ = Plotter.__figure(points_0+points_1)
 
-    plt.show()
+        Plotter.__set_axes_limits(axes)
 
-# matplotlib cannot resize all axes to the same scale so very small numbers make plots hard
-# to read, so all very small numbers will be rounded to 0 for plotting purposes only
-def plot_robot(joints, goal_points = None):
-    """ Plot robot view """
-    # rounding = 10 # set rounding to 10 decimal places for whole plot
-    _, axes, colors = figure(joints)
+        Plotter.plot_points_scatter(axes, points_0, 'r', path)
+        Plotter.plot_points_scatter(axes, points_1, 'b', path)
 
-    points = [pt.to_list() for pt in joints]
-    rounded_points = [round_all_pts(0, points), round_all_pts(1, points), round_all_pts(2, points)]
+        plt.show()
 
-    axes.set_xlim(-5,5)
-    axes.set_ylim(-5,5)
-    axes.set_zlim(-5,5)
+    # matplotlib cannot resize all axes to the same scale so very small numbers make plots hard
+    # to read, so all very small numbers will be rounded to 0 for plotting purposes only
+    @staticmethod
+    def plot_robot(joints, goal_points=None):
+        """ Plot robot view """
+        # rounding = 10 # set rounding to 10 decimal places for whole plot
+        _, axes, _ = Plotter.__figure(joints)
 
-    # add scatter plot for points
-    for axe_x, axe_y, axe_z, _ in zip(*rounded_points, colors):
-        axes.scatter(axe_x, axe_y, axe_z, color='g')
+        Plotter.__set_axes_limits(axes)
 
-    axes.plot(*rounded_points, color='r')
+        # plot robot arms
+        points = [pt.to_list() for pt in joints]
+        rounded_points = [Plotter.__round_all_pts(0, points),
+                          Plotter.__round_all_pts(1, points),
+                          Plotter.__round_all_pts(2, points)]
+        axes.plot(*rounded_points, color='r')
 
-    if goal_points is not None:
-        rounded_goal_points = [round_all_pts(0, goal_points),
-                               round_all_pts(1, goal_points),
-                               round_all_pts(2, goal_points)]
-        axes.scatter(*rounded_goal_points, color='b')
+        # plot robot joints
+        Plotter.plot_points_scatter(axes, points, 'b')
 
-    plt.show()
+        # optionally plot all robot goal points
+        if goal_points is not None:
+            Plotter.plot_points_scatter(axes, goal_points, 'b')
+
+        plt.show()
