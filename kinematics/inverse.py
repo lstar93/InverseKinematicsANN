@@ -19,7 +19,7 @@ class InverseKinematics:
         self.dh_matrix = dh_matrix
         self.joints_lengths = joints_lengths
         self.workspace_limits = workspace_limits
-        self.fkine = ForwardKinematics()
+        self.fkine = ForwardKinematics(self.dh_matrix)
 
     # use one of methods to compute inverse kinematics
     def ikine(self, dest_points):
@@ -121,9 +121,10 @@ class FabrikInverseKinematics(InverseKinematics):
             self.dh_matrix[0][0] = theta_1 # replace initial theta_1
 
             # calculate initial xyz possition of every robot joint
-            _, fk_all = self.fkine.fkine(*self.dh_matrix)
+            _, fk_all = self.fkine.fkine(self.dh_matrix[0])
 
-            # init_joints_positions = [Point([1,0,4]), Point([2,0,6]), Point([4,0,5]), Point([6,0,3])]
+            # init_joints_positions = [Point([1,0,4]), Point([2,0,6]), 
+            # Point([4,0,5]), Point([6,0,3])]
             init_joints_positions = [Point([x[0][3], x[1][3], x[2][3]]) for x in fk_all]
 
             # calculate joint positions using FABRIK
