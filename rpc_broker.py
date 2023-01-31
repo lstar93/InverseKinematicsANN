@@ -66,7 +66,7 @@ class IkineRPCBroker:
     def __exception_response(self, status, reason, corr_id):
         """ Exception handler """
         return {'status' : status,
-                'reason' : str(reason),
+                'reason' : reason,
                 'correlation_id' : corr_id}
 
     def callback(self, chan, method, props, body):
