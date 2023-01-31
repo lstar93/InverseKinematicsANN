@@ -5,12 +5,6 @@
 
 from kinematics.point import Point, get_distance_between, get_point_between
 
-# Keep some prints, but show them only if necessary
-VERBOSE = False
-def print_debug_msg(msg, verbose=VERBOSE):
-    """ Debug printer """
-    if verbose:
-        print(msg)
 
 class Fabrik:
     """ FABRIK stands from forward and backward reaching inverse kinematics ->\
@@ -25,7 +19,7 @@ class Fabrik:
 
     # Compute backward iteration
     def __backward(self, points, joints_goal_points):
-        """ Compute backward joint positions -> \
+        """ Calculate backward joint positions -> \
             from goal position to point close to the start joint """
         points_to_ret = [joints_goal_points] # goal point should be the last point in array
         positions = list(reversed(points[:-1]))
@@ -70,8 +64,6 @@ class Fabrik:
             forward = self.__forward(backward, start_point)
             goal_error = get_distance_between(forward[-1], joints_goal_points)
             current_join_positions = forward
-            print_debug_msg(f'Iteration {step} -> start position error = {start_error}, '\
-                        'goal position error = {goal_error}')
             step += 1
 
         return current_join_positions
