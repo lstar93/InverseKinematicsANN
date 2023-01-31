@@ -47,13 +47,13 @@ def cli_ikine(parser):
                                          Robot.links_lengths,
                                          Robot.effector_workspace_limits)
         ik_engine.load_model(model)
-        joint_angles = [ik_engine.ikine([pos]) for pos in points]
+        joint_angles = ik_engine.ikine(points)
 
     elif ikine_method == 'fabrik':
         ik_engine = FabrikInverseKinematics(Robot.dh_matrix,
                                             Robot.links_lengths,
                                             Robot.effector_workspace_limits)
-        joint_angles = [ik_engine.ikine([pos]) for pos in points]
+        joint_angles = ik_engine.ikine(points)
 
     if args.to_file is not None:
         pd.DataFrame(joint_angles,
@@ -189,10 +189,9 @@ if __name__ == '__main__':
 
         # use ForwardKinematics to check predictions
         predicted_points = []
-        fkine = ForwardKinematics()
+        fkine = ForwardKinematics(Robot.dh_matrix)
         for angles in angles_ik:
-            dh_matrix_out = [angles, *Robot.dh_matrix[1:]]
-            fk, _ = fkine.fkine(*dh_matrix_out)
+            fk, _ = fkine.fkine(angles)
             predicted_points.append([fk[0,3], fk[1,3], fk[2,3]])
 
         cli_known_args, _ = cliparser.parse_known_args()
