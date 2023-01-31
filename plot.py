@@ -73,18 +73,20 @@ def plot_robot(joints, goal_points = None):
     points = [pt.to_list() for pt in joints]
     rounded_points = [round_all_pts(0, points), round_all_pts(1, points), round_all_pts(2, points)]
 
-    axes.set_xlim(-3,3)
-    axes.set_ylim(-3,3)
-    axes.set_zlim(-3,3)
+    axes.set_xlim(-5,5)
+    axes.set_ylim(-5,5)
+    axes.set_zlim(-5,5)
 
     # add scatter plot for points
-    for axe_x, axe_y, axe_z, color in zip(*rounded_points, colors):
-        axes.scatter(axe_x, axe_y, axe_z, color=color)
+    for axe_x, axe_y, axe_z, _ in zip(*rounded_points, colors):
+        axes.scatter(axe_x, axe_y, axe_z, color='g')
 
     axes.plot(*rounded_points, color='r')
 
     if goal_points is not None:
-        rounded_goal_points = [round_all_pts(0, goal_points), round_all_pts(1, goal_points), round_all_pts(2, goal_points)]
+        rounded_goal_points = [round_all_pts(0, goal_points),
+                               round_all_pts(1, goal_points),
+                               round_all_pts(2, goal_points)]
         axes.scatter(*rounded_goal_points, color='b')
 
     plt.show()

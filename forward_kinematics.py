@@ -7,12 +7,6 @@ import numpy as np
 # supress printing enormous small numbers like 0.123e-16
 np.set_printoptions(suppress=True)
 
-# 6 DOF robot DH matrix, links lengths, workspace and joints limits
-class Robot:
-    """ 6 DOF robot math description """
-    dh_matrix = [[0, pi/2, 0, 0], [2, 0, 0, 0], [0, 2, 2, 2], [pi/2, 0, 0, 0]]
-    effector_workspace_limits = {'x': [0,6], 'y': [-6,6], 'z': [-3,6]}
-    links_lengths = [2, 2, 2, 2]
 
 class ForwardKinematics:
     """ Planar robotic arm forward kinematics """

@@ -24,7 +24,7 @@ class ANN:
         self.y_data_skaler = StandardScaler()
 
     def __fit_trainig_data(self, samples, features):
-        """ Split training/test (70/30) data and use MinMaxScaler to scale it """
+        """ Split training/test (70/30) data and use StandardScaler to scale it """
         x_train, x_test, y_train, y_test = \
             train_test_split(samples, features, test_size=0.33, random_state=42)
 
@@ -65,7 +65,7 @@ class ANN:
                       )
 
     def predict(self, position):
-        """ Use trained ANN to predict joint angles """
+        """ Use trained ANN to predict joint angles, scale input and rescale output """
         predictions = self.y_data_skaler.inverse_transform(
             self.model.predict(self.x_data_skaler.transform(position))
         )

@@ -7,11 +7,6 @@
 # pylint: disable=W0105 # string has no effect
 # pylint: disable=C0413 # imports should be placed at the top of the module
 
-'''
-TODO:
-1. read robot configuration (with angles limits) from file
-'''
-
 import argparse
 import pandas as pd
 from inverse_kinematics import AnnInverseKinematics, FabrikInverseKinematics
@@ -20,15 +15,16 @@ from position_generator import TrainingDataGenerator
 from forward_kinematics import ForwardKinematics
 from robot import Robot
 
+
 def cli_ikine(parser):
     """ Inverse kinematics CLI """
     parser.add_argument('--method', required=True, type=str, choices=['ann', 'fabrik'],
-                            help='select inverse kinematics engine, Neural Network or Fabrik')
+                            help='select inverse kinematics method, Neural Network or Fabrik')
 
     known_args, _ = parser.parse_known_args()
     if known_args.method == 'ann':
         parser.add_argument('--model', type=str, required=True,
-                    help='select .h5 file with saved mode, required only if ann was choosed')
+            help='select .h5 file with saved model, required only if ann ikine method was choosed')
 
     parser.add_argument('--points', type=str, required=True,
                             help='.csv file name with stored trajectory points')
@@ -57,7 +53,7 @@ def cli_ikine(parser):
         ik_engine = FabrikInverseKinematics(Robot.dh_matrix,
                                             Robot.links_lengths,
                                             Robot.effector_workspace_limits)
-        joint_angles = [ik_engine.ikine(pos) for pos in points]
+        joint_angles = [ik_engine.ikine([pos]) for pos in points]
 
     if args.to_file is not None:
         pd.DataFrame(joint_angles,
