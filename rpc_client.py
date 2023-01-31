@@ -51,6 +51,7 @@ class IkineRPCClient:
 
 
 if __name__ == '__main__':
+    """ Example usage """
     client = IkineRPCClient()
     positions_list = [[1,2,3], [4,2,2], [2,-1,-0]]
     positions_dict = dict()
