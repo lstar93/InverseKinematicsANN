@@ -5,6 +5,7 @@
 # pylint: disable=W0105 # unnecesary strings warning
 # pylint: disable=W0613 # unused argument
 
+import sys
 import json
 from uuid import uuid4
 from pika import BlockingConnection, ConnectionParameters, BasicProperties
@@ -52,8 +53,19 @@ class IkineRPCClient:
 
 if __name__ == '__main__':
     """ Example usage """
+
+    # create rpc client
     client = IkineRPCClient()
-    positions_list = [[1,2,3], [4,2,2], [2,-1,-0]]
+
+    # assign postions
+    positions_list = []
+    if len(sys.argv) == 2:
+        positions_list = list(str(sys.argv[1]).split(';'))
+        positions_list = [[float(x) for x in position.split(',')] for position in positions_list]
+    else:
+        positions_list = [[1,2,3], [4,2,2], [2,-1,-1]]
+
+    # create and send request
     positions_dict = dict()
     positions_dict['positions'] = positions_list
     positions_json = json.dumps(positions_dict)

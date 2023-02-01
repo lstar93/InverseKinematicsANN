@@ -7,11 +7,12 @@ import matplotlib.pyplot as plt
 class Plotter:
     """ Plotter class """
     limits = []
+    rounding = 5
 
     @staticmethod
-    def __round_all_pts(axis, pts, upto = 5):
+    def __round_all_pts(axis, pts):
         """ Round all points to make them more plottable """
-        return [round(x[axis], upto) for x in pts]
+        return [round(x[axis], Plotter.rounding) for x in pts]
 
     @staticmethod
     def __figure(points, size=(5,5)):
@@ -30,6 +31,11 @@ class Plotter:
             axes.set_xlim(*Plotter.limits[0])
             axes.set_ylim(*Plotter.limits[1])
             axes.set_zlim(*Plotter.limits[2])
+
+    @staticmethod
+    def set_data_rounding(round_upto):
+        """ Set plotted data rounding """
+        Plotter.rounding = round_upto
 
     @staticmethod
     def set_limits(limx, limy, limz):
@@ -56,7 +62,7 @@ class Plotter:
 
         Plotter.__set_axes_limits(axes)
 
-        dot_colors = [dot_color for _ in colors] if dot_color is not None else colors
+        dot_colors = colors if dot_color is None else [dot_color for _ in colors]
 
         Plotter.plot_points_scatter(axes, points, dot_colors, path)
 

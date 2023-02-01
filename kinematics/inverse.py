@@ -3,17 +3,19 @@
 
 # pylint: disable=W0511 # suppress TODOs
 
+from abc import ABC, abstractmethod
 from math import pi, atan2, acos
 import numpy as np
 from kinematics.forward import ForwardKinematics
 from kinematics.fabrik import Fabrik
 from kinematics.ann import ANN
 from kinematics.point import Point, get_distance_between, get_point_between
+from robot.robot import OutOfRobotReachException
 
-# supress printing enormous small numbers like 0.123e-16
+# suppress printing enormous small numbers like 0.123e-16
 np.set_printoptions(suppress=True)
 
-class InverseKinematics:
+class InverseKinematics(ABC):
     """ Inverse kinematics class """
     def __init__(self, dh_matrix, joints_lengths, workspace_limits):
         self.dh_matrix = dh_matrix
@@ -21,7 +23,8 @@ class InverseKinematics:
         self.workspace_limits = workspace_limits
         self.fkine = ForwardKinematics(self.dh_matrix)
 
-    # use one of methods to compute inverse kinematics
+    # calculate inverse kinematics
+    @abstractmethod
     def ikine(self, dest_points):
         """ Calculate inverse kinematics """
 
@@ -109,22 +112,22 @@ class FabrikInverseKinematics(InverseKinematics):
         ik_angles_ret = []
         for dest_point in dest_points:
             # Effector limits check
-            if any(dp < limitv[1][0] or dp > limitv[1][1] for dp, limitv in zip(dest_point, self.workspace_limits.items())):
-                raise Exception(f'Point {dest_point} is out of manipulator reach area! Limits: {self.workspace_limits}')
+            if any(dp < limitv[1][0] or dp > limitv[1][1] for dp, limitv in \
+                zip(dest_point, self.workspace_limits.items())):
+                raise OutOfRobotReachException(
+                    f'Inverse Kinematics exception, point {dest_point} '
+                     'is out of manipulator reach area! '
+                    f'Limits: {self.workspace_limits}')
 
             # calculate theta_1 to get rid of horizontal move before FABRIK
             # theta_1 = float(atan2(dest_point[1], dest_point[0]))
-            #if dest_point[1] >= 0:
             theta_1 = float(atan2(dest_point[1], dest_point[0]))
-            #else:
-            #    theta_1 = 2*pi + float(atan2(dest_point[1], dest_point[0]))
+
             self.dh_matrix[0][0] = theta_1 # replace initial theta_1
 
             # calculate initial xyz possition of every robot joint
             _, fk_all = self.fkine.fkine(self.dh_matrix[0])
 
-            # init_joints_positions = [Point([1,0,4]), Point([2,0,6]), 
-            # Point([4,0,5]), Point([6,0,3])]
             init_joints_positions = [Point([x[0][3], x[1][3], x[2][3]]) for x in fk_all]
 
             # calculate joint positions using FABRIK

@@ -3,48 +3,46 @@
 
 from math import sin, cos, pi
 import numpy as np
+from robot.robot import OutOfRobotReachException
 
-# supress printing enormous small numbers like 0.123e-16
+# suppress printing enormous small numbers like 0.123e-16
 np.set_printoptions(suppress=True)
-
 
 class ForwardKinematics:
     """ Planar robotic arm forward kinematics """
     def __init__(self, dh_matrix):
-        if not all(len(x) == len(dh_matrix[0]) for x in dh_matrix):
-            raise Exception('All homogenous matrix elements should have equal size')
+        assert all(len(x) == len(dh_matrix[0]) for x in dh_matrix)
         self.dh_matrix = dh_matrix
         self.thetas, self.epsilons, self.ais, self.alphas = self.dh_matrix
-        # number of features is equal to lenghts of one of dh parameters lists
+        # all DH matrix elements have same length equal to robot features size
         self.no_of_features = len(self.thetas)
+        assert self.no_of_features >= 3
 
     def __rotation_matrix(self, rot_axis, angle):
         """ Create rotation matrix around axis x, y or z """
         if (angle < -2*pi) or (angle > 2*pi):
-            raise Exception('Error, angle limits are (-2pi, 2pi)')
-        if self.no_of_features < 3:
-            raise Exception('Error, rotation matrix size must be 3 or greater')
+            raise OutOfRobotReachException('Forward Kinematics exception, '
+                'robot joints angles limits are (-2pi, 2pi)')
 
-        # Generate rotation matrix
-        if rot_axis == 'x':
-            rot_mtx = np.array([[1,           0,          0],
+        # generate rotation matrix
+        rot_mtx = {
+                'x': np.array([[1,           0,          0],
                                 [0, cos(angle), -sin(angle)],
-                                [0, sin(angle), cos(angle)]])
-        elif rot_axis == 'y':
-            rot_mtx = np.array([[cos(angle),  0, sin(angle)],
+                                [0, sin(angle), cos(angle)]]),
+
+                'y': np.array([[cos(angle),  0, sin(angle)],
                                 [0,           1,          0],
-                                [-sin(angle), 0, cos(angle)]])
-        elif rot_axis == 'z':
-            rot_mtx = np.array([[cos(angle), -sin(angle), 0],
+                                [-sin(angle), 0, cos(angle)]]),
+
+                'z': np.array([[cos(angle), -sin(angle), 0],
                                 [sin(angle), cos(angle),  0],
                                 [0,           0,          1]])
-        else:
-            raise Exception('Unknown axis name, only x, y or z are supported')
+                }[rot_axis]
 
-        # if size of robot features is greater than rotation matrix shape size
-        # make rotation matrix part of identity matrix beginning from the first element
         if self.no_of_features == rot_mtx.shape[0]:
             return rot_axis
+        # if size of robot features is greater than rotation matrix shape size
+        # make rotation matrix subset of identity matrix beginning from the first element
         identity_of_size = np.identity(self.no_of_features)
         identity_of_size[0:rot_mtx.shape[0], 0:rot_mtx.shape[0]] = rot_mtx
         return identity_of_size
@@ -53,10 +51,8 @@ class ForwardKinematics:
         """ Create translation matrix -> move it by vector """
         # rtm -> rotation matrix, 4x4 identity matrix
         # if no angle given just move matrix
-        if not axis:
-            rtm = np.identity(self.no_of_features)
-        else:
-            self.__rotation_matrix(axis, angle)
+        rtm = np.identity(self.no_of_features) if not axis else self.__rotation_matrix(axis, angle)
+
         # repalce first 3 elems of last column with transposed vector x
         # to move matrix by [x,y,z] vector
         for index, _ in enumerate(vect):
@@ -82,8 +78,8 @@ class ForwardKinematics:
 
         # init result with first transformation matrix
         fw_kine_matrix = [self.__transformation_matrix(
-                            self.thetas[0], self.epsilons[0],
-                            self.ais[0], self.alphas[0])]
+                          self.thetas[0], self.epsilons[0],
+                          self.ais[0], self.alphas[0])]
 
         # multiply transformation matrixes one by one
         for elem in range(self.no_of_features - 1):
