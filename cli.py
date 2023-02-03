@@ -7,6 +7,7 @@
 # pylint: disable=W0105 # string has no effect
 # pylint: disable=C0413 # imports should be placed at the top of the module
 
+import sys
 import argparse
 from abc import ABC, abstractmethod
 import pandas as pd
@@ -24,12 +25,6 @@ class Command(ABC):
     def generate(self, parser):
         """ Generate data """
 
-    @staticmethod
-    @abstractmethod
-    def command():
-        """ Get command name """
-        return 'circle'
-
     @abstractmethod
     def example(self):
         """ Get example command """
@@ -37,6 +32,8 @@ class Command(ABC):
 
 class CircleCommand(Command):
     """ Circle points CLI generator """
+    COMMAND = 'circle'
+
     def __init__(self):
         self.generator = TrainingDataGenerator.circle
 
@@ -51,16 +48,14 @@ class CircleCommand(Command):
         centre = [float(pos) for pos in (known_args.centre.split(','))]
         return (radius, samples, centre), self.generator(radius, samples, centre)
 
-    @staticmethod
-    def command():
-        return 'circle'
-
     def example(self):
         return "--generate-data --shape circle --radius 3 --samples 20 --centre '1,11,2'"
 
 
 class CubeCommand(Command):
     """ Cube points CLI generator """
+    COMMAND = 'cube'
+
     def __init__(self):
         self.generator = TrainingDataGenerator.cube
 
@@ -74,23 +69,17 @@ class CubeCommand(Command):
         start = [float(pos) for pos in (known_args.start.split(','))]
         return (step, dim, start), self.generator(step, *dim, start)
 
-    @staticmethod
-    def command():
-        return 'cube'
-
     def example(self):
         return "--generate-data --shape cube --step 0.75 --dim '2,3,4' --start '1,2,3'"
 
 
 class CubeRandomCommand(CubeCommand):
     """ Random cube points CLI generator """
+    COMMAND = 'cube_random'
+
     def __init__(self):
         super().__init__()
         self.generator = TrainingDataGenerator.cube_random
-
-    @staticmethod
-    def command():
-        return 'cube_random'
 
     def example(self):
         return "--generate-data --shape cube_random --step 0.75 --dim '2,3,4' --start '1,2,3'"
@@ -98,6 +87,8 @@ class CubeRandomCommand(CubeCommand):
 
 class RandomCommand(Command):
     """ Random points CLI generator """
+    COMMAND = 'random'
+
     def __init__(self):
         self.generator = TrainingDataGenerator.random
 
@@ -112,16 +103,14 @@ class RandomCommand(Command):
                        'z': [float(pos) for pos in (limits[2].split(','))]}
         return (samples, limits_dict), self.generator(samples, limits_dict)
 
-    @staticmethod
-    def command():
-        return 'random'
-
     def example(self):
         return "--generate-data --shape random --limits '0,3;0,4;0,5' --samples 20"
 
 
 class SpringCommand(Command):
     """ Spring points CLI generator """
+    COMMAND = 'spring'
+
     def __init__(self):
         self.generator = TrainingDataGenerator.spring
 
@@ -133,16 +122,14 @@ class SpringCommand(Command):
         dim = [float(pos) for pos in (known_args.dim.split(','))]
         return (samples, dim), self.generator(samples, *dim)
 
-    @staticmethod
-    def command():
-        return 'spring'
-
     def example(self):
         return "--generate-data --shape spring --samples 50 --dim '2,3,6'"
 
 
 class RandomDistributionCommand(Command):
     """ Random distribution points CLI generator """
+    COMMAND = 'random_dist'
+
     def __init__(self):
         self.generator = TrainingDataGenerator.random_distribution
 
@@ -162,106 +149,125 @@ class RandomDistributionCommand(Command):
                        'z': [float(pos) for pos in (limits[2].split(','))]}
         return (samples, std_dev, limits_dict), self.generator(samples, limits_dict, dist, std_dev)
 
-    @staticmethod
-    def command():
-        return 'random_dist'
-
     def example(self):
         return "--generate-data --shape random_dist --dist 'normal'\
         ' --samples 100 --std_dev 0.35 --limits '0,3;0,4;0,5'"
 
 
-def cli_data_generators(parser):
+class CLIData:
     """ Simple CLI to generate .csv with trajectories """
 
-    commands = {
-        CircleCommand.command(): CircleCommand(),
-        CubeCommand.command(): CubeCommand(),
-        CubeRandomCommand.command(): CubeRandomCommand(),
-        RandomCommand.command(): RandomCommand(),
-        SpringCommand.command(): SpringCommand(),
-        RandomDistributionCommand.command(): RandomDistributionCommand(),
-    }
+    def __init__(self, parser):
+        """ Init parser and possible commands """
+        self.commands = {
+            CircleCommand.COMMAND: CircleCommand(),
+            CubeCommand.COMMAND: CubeCommand(),
+            CubeRandomCommand.COMMAND: CubeRandomCommand(),
+            RandomCommand.COMMAND: RandomCommand(),
+            SpringCommand.COMMAND: SpringCommand(),
+            RandomDistributionCommand.COMMAND: RandomDistributionCommand()
+        }
+        self.parser = parser
 
-    parser.add_argument('--shape', required=True, type=str,
-                            choices=list(commands.keys()),
-                            help='select which shape should be generated')
+    def cli(self):
+        """ Parse CLI """
+        self.parser.add_argument('--shape', required=True, type=str,
+                                choices=list(self.commands.keys()),
+                                help='select which shape should be generated')
 
-    parser.add_argument('--verbose', action='store_true')
-    parser.add_argument('--example', action='store_true')
-    parser.add_argument('--to-file', type=str)
+        self.parser.add_argument('--verbose', action='store_true')
+        self.parser.add_argument('--example', action='store_true')
+        self.parser.add_argument('--to-file', type=str)
 
-    known_args, _ = parser.parse_known_args()
-    verbose = known_args.verbose
-    filename = known_args.to_file
+        known_args, _ = self.parser.parse_known_args()
+        verbose = known_args.verbose
+        filename = known_args.to_file
 
-    if known_args.example:
-        print(commands[known_args.shape].example())
-    else:
-        data, points = commands[known_args.shape].generate(parser)
+        if known_args.example:
+            print(self.commands[known_args.shape].example())
+        else:
+            data, points = self.commands[known_args.shape].generate(self.parser)
 
-        if filename is not None:
-            pd.DataFrame(points, columns=['x', 'y', 'z']).to_csv(filename, index=False)
+            if filename is not None:
+                pd.DataFrame(points, columns=['x', 'y', 'z']).to_csv(filename, index=False)
 
-        if verbose:
-            print(data)
-            Plotter.plot_points_3d(points)
+            if verbose:
+                print(data)
+                Plotter.plot_points_3d(points)
 
 
-def cli_ikine(parser): 
+class CLIIkine:
     """ Inverse kinematics CLI """
-    parser.add_argument('--method', required=True, type=str, choices=['ann', 'fabrik'],
-                            help='select inverse kinematics method, Neural Network or Fabrik')
 
-    known_args, _ = parser.parse_known_args()
-    if known_args.method == 'ann':
-        parser.add_argument('--model', type=str, required=True,
+    def __init__(self, parser):
+        """ Init parser """
+        self.parser = parser
+
+    # function that calculate forward kinematics to check
+    # how much inverse was correct
+    def __forward_kinematics(self, angles):
+        """ Calcualte forward kinematics """
+        fkine_points = []
+        fkine = ForwardKinematics(Robot.dh_matrix)
+        for pos_angles in angles:
+            fkp, _ = fkine.fkine(pos_angles)
+            fkine_points.append([fkp[0,3], fkp[1,3], fkp[2,3]])
+        return fkine_points
+
+    def cli(self):
+        """ Inverse kinematics CLI """
+        self.parser.add_argument('--method', required=True, type=str, choices=['ann', 'fabrik'],
+                                help='select inverse kinematics method, Neural Network or Fabrik')
+
+        known_args, _ = self.parser.parse_known_args()
+        if known_args.method == 'ann':
+            self.parser.add_argument('--model', type=str, required=True,
             help='select .h5 file with saved model, required only if ann ikine method was choosed')
 
-    parser.add_argument('--points', type=str, required=True,
-                            help='.csv file name with stored trajectory points')
+        self.parser.add_argument('--points', type=str, required=True,
+                                help='.csv file name with stored trajectory points')
 
-    parser.add_argument('--to-file', type=str)
-    parser.add_argument('--verbose', action='store_true')
-    parser.add_argument('--show-path', action='store_true')
-    parser.add_argument('--separate-plots', action='store_true')
+        self.parser.add_argument('--to-file', type=str)
+        self.parser.add_argument('--verbose', action='store_true')
+        self.parser.add_argument('--show-path', action='store_true')
+        self.parser.add_argument('--separate-plots', action='store_true')
 
-    args = parser.parse_args()
+        args = self.parser.parse_args()
 
-    ikine_method = args.method
-    points_file = args.points
-    points = pd.read_csv(points_file).values.tolist()
+        points = pd.read_csv(args.points).values.tolist()
 
-    joint_angles = []
-    try:
-        if ikine_method == 'ann':
+        joint_angles = []
+        if args.method == 'ann':
             model = args.model
             ik_engine = AnnInverseKinematics(Robot.dh_matrix,
-                                             Robot.links_lengths,
-                                             Robot.effector_workspace_limits)
+                                            Robot.links_lengths,
+                                            Robot.effector_workspace_limits)
             ik_engine.load_model(model)
             joint_angles = ik_engine.ikine(points)
 
-        elif ikine_method == 'fabrik':
+        elif args.method == 'fabrik':
             ik_engine = FabrikInverseKinematics(Robot.dh_matrix,
                                                 Robot.links_lengths,
                                                 Robot.effector_workspace_limits)
             joint_angles = ik_engine.ikine(points)
-    except OutOfRobotReachException as ikine_exception:
-        print(str(ikine_exception))
 
-    if args.to_file is not None:
-        pd.DataFrame(joint_angles,
-                     columns=['theta1', 'theta2', 'theta3', 'theta4'])\
-                     .to_csv(args.to_file, index=False)
+        if args.to_file is not None:
+            pd.DataFrame(joint_angles,
+                        columns=['theta1', 'theta2', 'theta3', 'theta4'])\
+                        .to_csv(args.to_file, index=False)
 
-    if args.verbose:
-        print(joint_angles)
-
-    return joint_angles, points
+        if args.verbose:
+            predicted_points = self.__forward_kinematics(joint_angles)
+            if not args.separate_plots:
+                Plotter.plot_joint_points_3d(predicted_points, points, args.show_path)
+            else:
+                Plotter.plot_points_3d(points, args.show_path, dot_color='b')
+                Plotter.plot_points_3d(predicted_points, args.show_path, dot_color='r')
+            print(joint_angles)
 
 
 if __name__ == '__main__':
+    # Choose CLI handler
     cliparser = argparse.ArgumentParser(prog='cli')
     group = cliparser.add_mutually_exclusive_group()
     group.add_argument('--inverse-kine', action='store_true')
@@ -274,28 +280,14 @@ if __name__ == '__main__':
 
     # Handle inverse kinematics CLI
     if cli_known_args.inverse_kine:
-        angles_ik, input_points = cli_ikine(cliparser)
-
-        # use ForwardKinematics to check predictions
-        predicted_points = []
-        fkine = ForwardKinematics(Robot.dh_matrix)
-
         try:
-            for angles in angles_ik:
-                fk, _ = fkine.fkine(angles)
-                predicted_points.append([fk[0,3], fk[1,3], fk[2,3]])
-        except OutOfRobotReachException as fkine_exception:
-            print(str(fkine_exception))
-
-        cli_known_args, _ = cliparser.parse_known_args()
-        show_path = cli_known_args.show_path
-
-        if not cli_known_args.separate_plots:
-            Plotter.plot_joint_points_3d(predicted_points, input_points, show_path)
-        else:
-            Plotter.plot_points_3d(input_points, show_path, dot_color='b')
-            Plotter.plot_points_3d(predicted_points, show_path, dot_color='r')
+            cli_ikine = CLIIkine(cliparser)
+            cli_ikine.cli()
+        except OutOfRobotReachException as kine_exception:
+            print(str(kine_exception))
+            sys.exit(0)
 
     # or handle inverse kinematics data generators
     elif cli_known_args.generate_data:
-        cli_data_generators(cliparser)
+        cli_data_generators = CLIData(cliparser)
+        cli_data_generators.cli()
