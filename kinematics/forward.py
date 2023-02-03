@@ -26,11 +26,11 @@ class ForwardKinematics:
 
         # generate rotation matrix
         rot_mtx = {
-                'x': np.array([[1,           0,          0],
-                                [0, cos(angle), -sin(angle)],
-                                [0, sin(angle), cos(angle)]]),
+                'x': np.array([[1,            0,          0],
+                                [0,  cos(angle), -sin(angle)],
+                                [0,  sin(angle), cos(angle)]]),
 
-                'y': np.array([[cos(angle),  0, sin(angle)],
+                'y': np.array([[cos(angle),   0, sin(angle)],
                                 [0,           1,          0],
                                 [-sin(angle), 0, cos(angle)]]),
 

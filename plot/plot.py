@@ -43,7 +43,7 @@ class Plotter:
         Plotter.limits = [limx, limy, limz]
 
     @staticmethod
-    def plot_points_scatter(axes, points, points_colors, path=False):
+    def __points_scatter(axes, points, points_colors, path=False):
         """ Simple scatter with previously rounded points """
         rounded_points = [Plotter.__round_all_pts(0, points),
                           Plotter.__round_all_pts(1, points),
@@ -64,7 +64,7 @@ class Plotter:
 
         dot_colors = colors if dot_color is None else [dot_color for _ in colors]
 
-        Plotter.plot_points_scatter(axes, points, dot_colors, path)
+        Plotter.__points_scatter(axes, points, dot_colors, path)
 
         plt.show()
 
@@ -77,8 +77,8 @@ class Plotter:
 
         Plotter.__set_axes_limits(axes)
 
-        Plotter.plot_points_scatter(axes, points_0, 'r', path)
-        Plotter.plot_points_scatter(axes, points_1, 'b', path)
+        Plotter.__points_scatter(axes, points_0, 'r', path)
+        Plotter.__points_scatter(axes, points_1, 'b', path)
 
         plt.show()
 
@@ -100,10 +100,10 @@ class Plotter:
         axes.plot(*rounded_points, color='r')
 
         # plot robot joints
-        Plotter.plot_points_scatter(axes, points, 'b')
+        Plotter.__points_scatter(axes, points, 'b')
 
         # optionally plot all robot goal points
         if goal_points is not None:
-            Plotter.plot_points_scatter(axes, goal_points, 'b')
+            Plotter.__points_scatter(axes, goal_points, 'b')
 
         plt.show()
