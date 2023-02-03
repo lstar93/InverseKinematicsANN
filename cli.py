@@ -204,8 +204,6 @@ class CLIIkine:
         """ Init parser """
         self.parser = parser
 
-    # function that calculate forward kinematics to check
-    # how much inverse was correct
     def __forward_kinematics(self, angles):
         """ Calcualte forward kinematics """
         fkine_points = []
