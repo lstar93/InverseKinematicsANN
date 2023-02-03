@@ -1,7 +1,7 @@
 """ Planar robot """
 #!/usr/bin/env python
 
-# pylint: disable=W1401 # string constant might be pissing r prefix
+# pylint: disable=W1401 # string constant might be missing r prefix
 # pylint: disable=W0105 # string has no effect
 # pylint: disable=C0413 # imports should be placed at the top of the module
 
