@@ -17,9 +17,9 @@ np.set_printoptions(suppress=True)
 
 class InverseKinematics(ABC):
     """ Inverse kinematics class """
-    def __init__(self, dh_matrix, joints_lengths, workspace_limits):
+    def __init__(self, dh_matrix, joints_distances, workspace_limits):
         self.dh_matrix = dh_matrix
-        self.joints_lengths = joints_lengths
+        self.joints_distances = joints_distances
         self.workspace_limits = workspace_limits
         self.fkine = ForwardKinematics(self.dh_matrix)
 
@@ -33,9 +33,9 @@ class InverseKinematics(ABC):
 # Now Fabrik class is designed only for 6DOF planar robot
 class FabrikInverseKinematics(InverseKinematics):
     """ Reaching inverse kinematics using Fabrik method """
-    def __init__(self, dh_matrix, joints_lengths, workspace_limits,
+    def __init__(self, dh_matrix, joints_distances, workspace_limits,
                  max_err = 0.001, max_iterations_num = 100):
-        super().__init__(dh_matrix, joints_lengths, workspace_limits)
+        super().__init__(dh_matrix, joints_distances, workspace_limits)
         self.max_err = max_err
         self.max_iterations_num = max_iterations_num
         self.current_joints_positions = []
@@ -132,7 +132,7 @@ class FabrikInverseKinematics(InverseKinematics):
 
             # calculate joint positions using FABRIK
             fab = Fabrik(init_joints_positions,
-                        self.joints_lengths,
+                        self.joints_distances,
                         self.max_err,
                         self.max_iterations_num)
 
@@ -147,8 +147,8 @@ class FabrikInverseKinematics(InverseKinematics):
 
 class AnnInverseKinematics(InverseKinematics):
     """ reaching inverse kinematics using Artificial NN method """
-    def __init__(self, dh_matrix, joints_lengths, workspace_limits):
-        super().__init__(dh_matrix, joints_lengths, workspace_limits)
+    def __init__(self, dh_matrix, joints_distances, workspace_limits):
+        super().__init__(dh_matrix, joints_distances, workspace_limits)
         self.ann = ANN(workspace_limits, dh_matrix)
 
     def load_model(self, model_name):
