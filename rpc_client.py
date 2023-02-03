@@ -52,18 +52,25 @@ class IkineRPCClient:
 
 
 if __name__ == '__main__':
-    """ Example usage """
+    """ Example command line usage """
 
     # create rpc client
     client = IkineRPCClient()
+    USAGE = "CLI Usage: rpc_client.py x,y,z;x,y,z;... "\
+        "for example: rpc_client.py 1,2,3;4,-2.1,3;-1,-1,0.12"
 
     # assign postions
     positions_list = []
-    if len(sys.argv) == 2:
-        positions_string = list(str(sys.argv[1]).split(';'))
-        positions_list = [[float(x) for x in position.split(',')] for position in positions_string]
-    else:
-        positions_list = [[1,2,3], [4,2,2], [2,-1,-1]]
+    try:
+        if len(sys.argv) == 2:
+            positions_string = list(str(sys.argv[1]).split(';'))
+            positions_list = \
+                [[float(x) for x in position.split(',')] for position in positions_string]
+        else:
+            raise ValueError
+    except ValueError:
+        print(USAGE)
+        sys.exit(0)
 
     # create and send request
     positions_dict = dict()
