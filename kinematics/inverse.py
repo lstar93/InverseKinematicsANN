@@ -39,6 +39,9 @@ class FabrikInverseKinematics(InverseKinematics):
         self.max_err = max_err
         self.max_iterations_num = max_iterations_num
         self.current_joints_positions = []
+        self.fabrik = Fabrik(self.joints_distances,
+                             self.max_err,
+                             self.max_iterations_num)
 
     def __get_angles(self, joints_goal_positions):
         """ Calculate angles from cosine theorem """
@@ -131,12 +134,7 @@ class FabrikInverseKinematics(InverseKinematics):
             init_joints_positions = [Point([x[0][3], x[1][3], x[2][3]]) for x in fk_all]
 
             # calculate joint positions using FABRIK
-            fab = Fabrik(init_joints_positions,
-                        self.joints_distances,
-                        self.max_err,
-                        self.max_iterations_num)
-
-            positions_from_fabrik = fab.calculate(dest_point)
+            positions_from_fabrik = self.fabrik.calculate(init_joints_positions, dest_point)
 
             # calculate manipulator angles using FABRIK
             ik_angles, _ = self.__get_angles(positions_from_fabrik)

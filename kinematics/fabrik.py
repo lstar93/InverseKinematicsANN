@@ -8,18 +8,12 @@ from kinematics.point import Point, get_distance_between, get_point_between
 
 class Fabrik:
     """ FABRIK stands from forward and backward reaching inverse kinematics ->\
-            https://www.youtube.com/watch?v=UNoX65PRehA&feature=emb_title 
+            https://www.youtube.com/watch?v=UNoX65PRehA&feature=emb_title
             https://www.academia.edu/9165835/FABR...matics_problem """
-    def __init__(self, init_joints_positions, joints_distances,
-                    err_margin = 0.001, max_iter_num = 100):
+    def __init__(self, joints_distances, err_margin = 0.001, max_iter_num = 100):
         self.joints_distances = joints_distances
-        self.init_joints_positions = init_joints_positions
         self.err_margin = err_margin
         self.max_iter_num = max_iter_num
-
-        assert all(x == len(self.init_joints_positions)
-                for x in (len(self.init_joints_positions), len(self.joints_distances))),\
-                'Input vectors should have equal lengths!'
 
     # Compute backward iteration
     def __backward(self, points, joints_goal_points):
@@ -47,11 +41,15 @@ class Fabrik:
             points_to_ret.append(middle_stage)
         return points_to_ret
 
-    def calculate(self, goal_eff_pos):
+    def calculate(self, init_joints_positions, goal_effector_position):
         """ Calculate all joints positions joining backward and forward methods """
-        current_join_positions = self.init_joints_positions
-        start_point = self.init_joints_positions[0]
-        joints_goal_points = Point(goal_eff_pos)
+        if not all(x == len(init_joints_positions)
+                for x in (len(init_joints_positions), len(self.joints_distances))):
+            raise Exception('Input vectors should have equal lengths!')
+
+        current_join_positions = init_joints_positions
+        start_point = init_joints_positions[0]
+        joints_goal_points = Point(goal_effector_position)
         start_error = 1
         goal_error = 1
         step = 0
