@@ -17,6 +17,10 @@ class Fabrik:
         self.err_margin = err_margin
         self.max_iter_num = max_iter_num
 
+        assert all(x == len(self.init_joints_positions)
+                for x in (len(self.init_joints_positions), len(self.joint_distances))),\
+                'Input vectors should have equal lengths!'
+
     # Compute backward iteration
     def __backward(self, points, joints_goal_points):
         """ Calculate backward joint positions -> \
@@ -45,10 +49,6 @@ class Fabrik:
 
     def calculate(self, goal_eff_pos):
         """ Calculate all joints positions joining backward and forward methods """
-        if not all(x == len(self.init_joints_positions) 
-                for x in (len(self.init_joints_positions), len(self.joint_distances))):
-            raise Exception('Input vectors should have equal lengths!')
-
         current_join_positions = self.init_joints_positions
         start_point = self.init_joints_positions[0]
         joints_goal_points = Point(goal_eff_pos)
