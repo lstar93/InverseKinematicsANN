@@ -36,12 +36,10 @@ class FabrikInverseKinematics(InverseKinematics):
     def __init__(self, dh_matrix, joints_distances, workspace_limits,
                  max_err = 0.001, max_iterations_num = 100):
         super().__init__(dh_matrix, joints_distances, workspace_limits)
-        self.max_err = max_err
-        self.max_iterations_num = max_iterations_num
         self.current_joints_positions = []
-        self.fabrik = Fabrik(self.joints_distances,
-                             self.max_err,
-                             self.max_iterations_num)
+        self.fabrik = Fabrik(joints_distances,
+                             max_err,
+                             max_iterations_num)
 
     def __get_angles(self, joints_goal_positions):
         """ Calculate angles from cosine theorem """
