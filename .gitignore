@@ -6,3 +6,7 @@ __pycache__
 test.py
 apitest.py
 unit_tests.py
+
+# do not ignore model file
+!models/*.h5
+!models/*.bin
