@@ -60,8 +60,8 @@ if __name__ == '__main__':
     # assign postions
     positions_list = []
     if len(sys.argv) == 2:
-        positions_list = list(str(sys.argv[1]).split(';'))
-        positions_list = [[float(x) for x in position.split(',')] for position in positions_list]
+        positions_string = list(str(sys.argv[1]).split(';'))
+        positions_list = [[float(x) for x in position.split(',')] for position in positions_string]
     else:
         positions_list = [[1,2,3], [4,2,2], [2,-1,-1]]
 
