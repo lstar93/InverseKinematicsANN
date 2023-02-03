@@ -7,6 +7,7 @@
 # pylint: disable=W0105 # string has no effect
 # pylint: disable=C0413 # imports should be placed at the top of the module
 
+import os
 import sys
 import argparse
 from abc import ABC, abstractmethod
@@ -218,8 +219,16 @@ class CLIIkine:
         """ Inverse kinematics CLI """
         self.parser.add_argument('--method', required=True, type=str, choices=['ann', 'fabrik'],
                                 help='select inverse kinematics method, Neural Network or Fabrik')
+        self.parser.add_argument('--list-models', action='store_true')
 
         known_args, _ = self.parser.parse_known_args()
+        if known_args.list_models:
+            ann_models = os.listdir('models')
+            print('Available models:')
+            for ann_model in ann_models:
+                print(ann_model)
+                sys.exit(0)
+
         if known_args.method == 'ann':
             self.parser.add_argument('--model', type=str, required=True,
             help='select .h5 file with saved model, required only if ann ikine method was choosed')
