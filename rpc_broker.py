@@ -105,7 +105,9 @@ class IkineRPCBroker:
         """ Start consuming RPC clients requests """
         self.__channel.start_consuming()
 
-if __name__ == '__main__':
+
+def main():
+    """ Start broker """
     try:
         ikine_engine = get_ikine_engine_cli()
         broker = IkineRPCBroker(ikine_engine)
@@ -117,3 +119,7 @@ if __name__ == '__main__':
             sys.exit(0)
         except SystemExit:
             os._exit(0) # posix
+
+
+if __name__ == '__main__':
+    main()

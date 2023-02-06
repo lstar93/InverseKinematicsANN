@@ -36,7 +36,6 @@ class FabrikInverseKinematics(InverseKinematics):
     def __init__(self, dh_matrix, joints_distances, workspace_limits,
                  max_err = 0.001, max_iterations_num = 100):
         super().__init__(dh_matrix, joints_distances, workspace_limits)
-        self.current_joints_positions = []
         self.fabrik = Fabrik(joints_distances,
                              max_err,
                              max_iterations_num)
@@ -98,14 +97,8 @@ class FabrikInverseKinematics(InverseKinematics):
             theta_4 = (pi - acos_t4)
         # todo: n-th theta
 
-        self.current_joints_positions = [point_a, *joints_goal_positions]
-
         return [theta_1, theta_2, theta_3, theta_4],\
                [base, first_triangle, second_triangle, third_triangle]
-
-    def get_current_joints_positions(self):
-        """ Get list with current (x,y,z) positions of all robot joints """
-        return self.current_joints_positions
 
     # use one of methods to calculate inverse kinematics
     def ikine(self, dest_points):

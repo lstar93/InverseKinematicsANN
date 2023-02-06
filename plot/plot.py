@@ -100,7 +100,7 @@ class Plotter:
         axes.plot(*rounded_points, color='r')
 
         # plot robot joints
-        Plotter.__points_scatter(axes, points, 'b')
+        Plotter.__points_scatter(axes, points, 'g')
 
         # optionally plot all robot goal points
         if goal_points is not None:

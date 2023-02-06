@@ -51,13 +51,12 @@ class IkineRPCClient:
         return str(self.response)
 
 
-if __name__ == '__main__':
+def main():
     """ Example command line usage """
-
     # create rpc client
     client = IkineRPCClient()
-    USAGE = "CLI Usage: rpc_client.py x,y,z;x,y,z;... "\
-        "for example: rpc_client.py 1,2,3;4,-2.1,3;-1,-1,0.12"
+    usage = "CLI Usage: rpc_client.py x,y,z;x,y,z;... "\
+        "example: rpc_client.py 1,2,3;4,-2.1,3;-1,-1,0.12"
 
     # assign postions
     positions_list = []
@@ -69,7 +68,7 @@ if __name__ == '__main__':
         else:
             raise ValueError
     except ValueError:
-        print(USAGE)
+        print(usage)
         sys.exit(0)
 
     # create and send request
@@ -78,3 +77,7 @@ if __name__ == '__main__':
     positions_json = json.dumps(positions_dict)
     print(f'Requesting ikine for positions {positions_json}')
     print(f'Ikine response is {client.call(positions_json)}')
+
+
+if __name__ == '__main__':
+    main()

@@ -273,8 +273,8 @@ class CLIIkine:
             print(joint_angles)
 
 
-if __name__ == '__main__':
-    # Choose CLI handler
+def main():
+    """ main function """
     cliparser = argparse.ArgumentParser(prog='cli')
     group = cliparser.add_mutually_exclusive_group()
     group.add_argument('--inverse-kine', action='store_true')
@@ -298,3 +298,7 @@ if __name__ == '__main__':
     elif cli_known_args.generate_data:
         cli_data_generators = CLIData(cliparser)
         cli_data_generators.cli()
+
+
+if __name__ == '__main__':
+    main()
