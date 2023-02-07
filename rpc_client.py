@@ -22,13 +22,13 @@ class IkineRPCClient:
 
         self.channel.basic_consume(
                      queue=self.callback_queue,
-                     on_message_callback=self.on_response,
+                     on_message_callback=self.__on_response,
                      auto_ack=True)
 
         self.response = None
         self.corr_id = None
 
-    def on_response(self, chan, method, props, body):
+    def __on_response(self, chan, method, props, body):
         """ Request/response data handler """
         # if response correlation id match atach body to response
         if self.corr_id == props.correlation_id:

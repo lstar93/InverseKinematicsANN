@@ -33,8 +33,10 @@ _____|_____
 """
 
 from math import pi
+from dataclasses import dataclass
 
 # 6 DOF robot DH matrix, links lengths, workspace and joints limits
+@dataclass
 class SixDOFRobot():
     """ 6 DOF robot math description """
     dh_matrix = [[0, pi/2, 0, 0], [2, 0, 0, 0], [0, 2, 2, 2], [pi/2, 0, 0, 0]]
@@ -43,3 +45,5 @@ class SixDOFRobot():
 
 class OutOfRobotReachException(Exception):
     """ Robot manipulator exception class """
+
+robot = SixDOFRobot()

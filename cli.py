@@ -16,7 +16,7 @@ from kinematics.forward import ForwardKinematics
 from kinematics.inverse import AnnInverseKinematics, FabrikInverseKinematics
 from plot.plot import Plotter
 from robot.position_generator import TrainingDataGenerator
-from robot.robot import SixDOFRobot as Robot
+from robot.robot import robot as Robot
 from robot.robot import OutOfRobotReachException
 
 
@@ -42,15 +42,15 @@ class CircleCommand(Command):
         """ Generate data """
         parser.add_argument('--radius', required=True, type=float)
         parser.add_argument('--samples', required=True, type=int)
-        parser.add_argument('--centre', required=True, type=str)
+        parser.add_argument('--center', required=True, type=str)
         known_args, _ = parser.parse_known_args()
         radius = known_args.radius
         samples = known_args.samples
-        centre = [float(pos) for pos in (known_args.centre.split(','))]
-        return (radius, samples, centre), self.generator(radius, samples, centre)
+        center = [float(pos) for pos in (known_args.center.split(','))]
+        return (radius, samples, center), self.generator(radius, samples, center)
 
     def example(self):
-        return "--generate-data --shape circle --radius 3 --samples 20 --centre '1,11,2'"
+        return "--generate-data --shape circle --radius 3 --samples 20 --center 1,11,2"
 
 
 class CubeCommand(Command):
@@ -71,7 +71,7 @@ class CubeCommand(Command):
         return (step, dim, start), self.generator(step, *dim, start)
 
     def example(self):
-        return "--generate-data --shape cube --step 0.75 --dim '2,3,4' --start '1,2,3'"
+        return "--generate-data --shape cube --step 0.75 --dim 2,3,4 --start 1,2,3"
 
 
 class CubeRandomCommand(CubeCommand):
@@ -83,7 +83,7 @@ class CubeRandomCommand(CubeCommand):
         self.generator = TrainingDataGenerator.cube_random
 
     def example(self):
-        return "--generate-data --shape cube_random --step 0.75 --dim '2,3,4' --start '1,2,3'"
+        return "--generate-data --shape cube_random --step 0.75 --dim 2,3,4 --start 1,2,3"
 
 
 class RandomCommand(Command):
@@ -105,7 +105,7 @@ class RandomCommand(Command):
         return (samples, limits_dict), self.generator(samples, limits_dict)
 
     def example(self):
-        return "--generate-data --shape random --limits '0,3;0,4;0,5' --samples 20"
+        return "--generate-data --shape random --limits 0,3;0,4;0,5 --samples 20"
 
 
 class SpringCommand(Command):
@@ -124,7 +124,7 @@ class SpringCommand(Command):
         return (samples, dim), self.generator(samples, *dim)
 
     def example(self):
-        return "--generate-data --shape spring --samples 50 --dim '2,3,6'"
+        return "--generate-data --shape spring --samples 50 --dim 2,3,6"
 
 
 class RandomDistributionCommand(Command):
@@ -151,8 +151,8 @@ class RandomDistributionCommand(Command):
         return (samples, std_dev, limits_dict), self.generator(samples, limits_dict, dist, std_dev)
 
     def example(self):
-        return "--generate-data --shape random_dist --dist 'normal'\
-        ' --samples 100 --std_dev 0.35 --limits '0,3;0,4;0,5'"
+        return "--generate-data --shape random_dist --dist normal "\
+        "--samples 100 --std_dev 0.35 --limits 0,3;0,4;0,5"
 
 
 class CLIData:
@@ -220,14 +220,17 @@ class CLIIkine:
         self.parser.add_argument('--list-models', action='store_true')
 
         known_args, _ = self.parser.parse_known_args()
-        if known_args.list_models:
-            ann_models = os.listdir('models')
-            print('Available models:')
-            for ann_model in ann_models:
-                print(ann_model)
-                sys.exit(0)
 
         if known_args.method == 'ann':
+            # list available models
+            if known_args.list_models:
+                ann_models = os.listdir('models')
+                print('Available models:')
+                for ann_model in ann_models:
+                    if '.h5' in ann_model:
+                        print(ann_model)
+                sys.exit(0)
+            # annd mandatory model argument
             self.parser.add_argument('--model', type=str, required=True,
             help='select .h5 file with saved model, required only if ann ikine method was choosed')
 
