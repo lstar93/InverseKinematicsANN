@@ -11,7 +11,7 @@ import argparse
 import json
 from pika import BlockingConnection, ConnectionParameters, BasicProperties
 from kinematics.inverse import FabrikInverseKinematics, AnnInverseKinematics
-from robot.robot import SixDOFRobot as Robot
+from robot.robot import robot as Robot
 from robot.robot import OutOfRobotReachException
 
 DEBUG_MSG = False
