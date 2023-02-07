@@ -59,10 +59,11 @@ Command output will show example usage.
 
 ## Demonstration
 
-Robot IK for trajectory obtained with ANN model 'roboarm_model_1674153800-982793.h5'. Model is available in 'models' directory. Trajectory was generated with CLI command for 'spring' shape.
+Demonstrated Robot IK for trajectory below was obtained with ANN model 'roboarm_model_1674153800-982793.h5'. Model is available in **models** directory in repo. Trajectory was generated via CLI command for 'spring' shape.
 
 ![](sample.gif)
 
 ## TODOs
 1. Support for custom planar robots.
 2. Interface to train ANN model for custom robots.
+3. Add remote RPC.
