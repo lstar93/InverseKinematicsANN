@@ -5,21 +5,18 @@
 
 from math import sqrt
 
-class Point:
+class Point(list):
     """ 3D point representation"""
     def __init__(self, xyz):
+        super().__init__(xyz)
         self.x, self.y, self.z = xyz
 
     def __str__(self):
-        return str([self.x, self.y, self.z])
+        aslist = [self.x, self.y, self.z]
+        return str(f'Point({aslist})')
 
     def __repr__(self):
         return str(self)
-
-    def to_list(self):
-        """ 3D point to python list """
-        return [self.x, self.y, self.z]
-
 
 def get_distance_between(point_a, point_b):
     """ Calculate distance between two points """

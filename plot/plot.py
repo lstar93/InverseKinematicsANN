@@ -93,7 +93,7 @@ class Plotter:
         Plotter.__set_axes_limits(axes)
 
         # plot robot arms
-        points = [pt.to_list() for pt in joints]
+        points = joints
         rounded_points = [Plotter.__round_all_pts(0, points),
                           Plotter.__round_all_pts(1, points),
                           Plotter.__round_all_pts(2, points)]
