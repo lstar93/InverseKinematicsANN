@@ -20,15 +20,17 @@ class PointTest(unittest.TestCase):
     distance = 3.831649
 
     def to_list(self):
-        """ Point to list transofrmation test """
+        """ Point to list transofrmation """
         assert [0, 0, 0] == self.point_0
         assert [-2.22, 3.123, 0.002] == self.point_1
 
     def get_distance_between(self):
+        """ Get distance between two points """
         ret_distance = get_distance_between(self.point_0, self.point_1)
         assert_almost_equal(self.distance, ret_distance)
 
     def get_point_between(self):
+        """ Get point coordinates between two points """
         middle = get_point_between(self.point_0, self.point_1)
         np_middle = (np.array(self.point_0)+np.array(self.point_1))/2
         assert_almost_equal(np_middle, middle)
