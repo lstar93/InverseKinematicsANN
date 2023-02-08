@@ -11,7 +11,8 @@ class Point:
         self.x, self.y, self.z = xyz
 
     def __str__(self):
-        return str([self.x, self.y, self.z])
+        aslist = [self.x, self.y, self.z]
+        return str(f'Point({aslist})')
 
     def __repr__(self):
         return str(self)
