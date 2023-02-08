@@ -146,4 +146,12 @@ class AnnInverseKinematics(InverseKinematics):
 
     def ikine(self, dest_points):
         """ Predict thetas using neural network """
+        for dest_point in dest_points:
+            # Effector limits check
+            if any(dp < limitv[1][0] or dp > limitv[1][1] for dp, limitv in \
+                zip(dest_point, self.workspace_limits.items())):
+                raise OutOfRobotReachException(
+                    f'Inverse Kinematics exception, point {dest_point} '
+                     'is out of manipulator reach area! '
+                    f'Limits: {self.workspace_limits}')
         return self.ann.predict(dest_points).tolist()

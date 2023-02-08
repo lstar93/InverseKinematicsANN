@@ -19,7 +19,7 @@ class ANN:
     def __init__(self, effector_workspace_limits, dh_matrix):
         self.effector_workspace_limits = effector_workspace_limits
         self.dh_matrix = dh_matrix
-        self.model = Sequential()
+        self.model = None
         self.x_data_skaler = StandardScaler()
         self.y_data_skaler = StandardScaler()
 
@@ -38,6 +38,8 @@ class ANN:
 
     def train_model(self, epochs, samples, features):
         """ Train ANN Sequential model """
+        self.model = Sequential()
+
         data_in, data_out, data_test_in, data_test_out = self.__fit_trainig_data(samples, features)
 
         self.model.add(Input(shape=(3,))) # Input layer, 3 input variables
@@ -81,12 +83,12 @@ class ANN:
         self.y_data_skaler = load(f'{modelname}_scaler_y.bin')
         return self.model
 
-    def save_model(self):
+    def save_model(self, prefix = 'model'):
         """ Save model to file """
         date_now = datetime.now()
         # replace . with - in filename to look better
         timestamp_str = str(datetime.timestamp(date_now)).replace('.','-')
-        self.model.save(f'model_{timestamp_str}.h5')
+        self.model.save(f'{prefix}_{timestamp_str}.h5')
         # save scalers
-        dump(self.x_data_skaler, f'model_{timestamp_str}_scaler_x.bin', compress=True)
-        dump(self.y_data_skaler, f'model_{timestamp_str}_scaler_y.bin', compress=True)
+        dump(self.x_data_skaler, f'{prefix}_{timestamp_str}_scaler_x.bin', compress=True)
+        dump(self.y_data_skaler, f'{prefix}_{timestamp_str}_scaler_y.bin', compress=True)
