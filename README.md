@@ -50,8 +50,6 @@ same operation for **fabrik**:
 
 > cli --inverse-kine --method fabrik --points spring.csv --verbose
 
-<br>
-
 ### RPC broker
 RPC broker run on default RabbitMQ addres localhost:5672. Broker has single queue named 'ikine_queue'. Example client can be found in examples directory (examples/rpc_client.py). To start inverse kinematics broker first RabbitMQ must be installed and service started.
 
