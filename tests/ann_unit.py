@@ -44,11 +44,6 @@ class AnnTest(unittest.TestCase):
         predicted = self.ann.predict(points)
         assert_almost_equal(predicted, output)
 
-        # this should go to ann inverse kinematics class test :)
-        # with assert_raises(OutOfRobotReachException):
-        #     points = [[1.0, 22.1, 3.0]]
-        #     predicted = self.ann.predict(points)
-
 def ann_test_suite():
     suite = unittest.TestSuite()
     suite.addTest(AnnTest('load_model'))
