@@ -42,7 +42,7 @@ Second available CLI operation is robotic arm inverse kinematics calculation. Jo
 
 **--verbose** and **--to-file** parameters work here as well.
 
-Example for IK calculated via **ann**:
+Example IK calculated via **ann**:
 
 > cli --inverse-kine --method ann --model models/roboarm_model_1674153800-982793.h5 --points spring.csv --verbose
 
