@@ -12,6 +12,7 @@ from tests.ann_unit import ann_test_suite
 from tests.fabrik_unit import fabrik_test_suite
 from tests.point_unit import point_test_suite
 from tests.inverse_unit import ikine_test_suite
+from tests.forward_unit import fwkine_test_suite
 
 
 def clean():
@@ -20,6 +21,7 @@ def clean():
     for scaler in glob('tests/saved_model*.bin'):
         os.remove(scaler)
 
+
 def main():
     clean()
     runner = unittest.TextTestRunner(verbosity=2)
@@ -27,7 +29,9 @@ def main():
     runner.run(fabrik_test_suite())
     runner.run(point_test_suite())
     runner.run(ikine_test_suite())
+    runner.run(fwkine_test_suite())
     clean()
+
 
 if __name__ == '__main__':
     main()
