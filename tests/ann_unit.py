@@ -5,20 +5,11 @@
 # pylint: disable=C0116
 # pylint: disable=C0115
 
-from math import pi
-from glob import glob
 import unittest
-
+from glob import glob
 from numpy.testing import assert_almost_equal
+from robot.robot import robot
 from kinematics.ann import ANN
-
-
-class TestRobot():
-    dh_matrix = [[0, pi/2, 0, 0], [2, 0, 0, 0], [0, 2, 2, 2], [pi/2, 0, 0, 0]]
-    effector_workspace_limits = {'x': [0,6], 'y': [-6,6], 'z': [-3,6]}
-    links_lengths = [2, 2, 2, 2]
-
-robot = TestRobot()
 
 
 class AnnTest(unittest.TestCase):

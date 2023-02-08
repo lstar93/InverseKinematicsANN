@@ -157,7 +157,7 @@ if __name__ == '__main__':
             print(str(exception))
             sys.exit(0)
 
-        # Plotter.plot_robot(predicted_all_joints_position, points)
+        Plotter.plot_robot(predicted_all_joints_position, points)
 
     fabrik = Fabrik(Robot.links_lengths)
     fk, fkall = fkine.fkine(Robot.dh_matrix[0])
