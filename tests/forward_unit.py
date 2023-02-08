@@ -7,9 +7,10 @@
 
 import unittest
 from numpy.testing import assert_array_almost_equal
-from robot.robot import robot
+from robot.robot import SixDOFRobot
 from kinematics.forward import ForwardKinematics
 
+robot = SixDOFRobot()
 
 class ForwardKinematicsTest(unittest.TestCase):
 

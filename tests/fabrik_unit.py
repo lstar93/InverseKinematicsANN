@@ -7,11 +7,12 @@
 
 import unittest
 from numpy.testing import assert_array_almost_equal
-from robot.robot import robot
+from robot.robot import SixDOFRobot
 from kinematics.fabrik import Fabrik
 from kinematics.point import Point
 from kinematics.forward import ForwardKinematics
 
+robot = SixDOFRobot()
 
 class FabrikTest(unittest.TestCase):
 

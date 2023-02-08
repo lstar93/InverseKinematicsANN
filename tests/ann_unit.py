@@ -8,9 +8,10 @@
 import unittest
 from glob import glob
 from numpy.testing import assert_almost_equal
-from robot.robot import robot
+from robot.robot import SixDOFRobot
 from kinematics.ann import ANN
 
+robot = SixDOFRobot()
 
 class AnnTest(unittest.TestCase):
 

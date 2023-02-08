@@ -7,9 +7,10 @@
 
 import unittest
 from numpy.testing import assert_almost_equal, assert_raises
-from robot.robot import robot, OutOfRobotReachException
+from robot.robot import SixDOFRobot, OutOfRobotReachException
 from kinematics.inverse import FabrikInverseKinematics, AnnInverseKinematics
 
+robot = SixDOFRobot()
 
 class InverseKinematicsFabrikTest(unittest.TestCase):
 
