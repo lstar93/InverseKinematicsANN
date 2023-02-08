@@ -16,29 +16,33 @@ CLI has two main operations. First is generating robot effector trajectory.
 
 > usage: cli [-h] --generate-data --shape {circle,cube,cube_random,random,spring,random_dist} [--verbose] [--example] [--to-file TO_FILE]
 
-Example usage for shape can be listed by adding **--example** parameter:
+**--shape** is mandatory parameter to choose from available trajectory shapes,
 
-> cli --generate-data --shape random_dist --example
->> --generate-data --shape random_dist --dist normal --samples 100 --std_dev 0.35 --limits 0,3;0,4;0,5
+**--example** shows an example for chosen shape,
 
-To save points as .csv file use **--to-file** parameter with csv filename as argument. If **--verbose** parameter was set generated points will be printed as command output and then plotted.
+**--to-file** directs output of inverse kinematics to .csv file, command argument is filename,
 
-> cli --generate-data --shape circle --radius 3 --samples 20 --center 1,11,2 --to-file circle.csv --verbose
+**--verbose** if set returns calculated angles to output then plot scatter.
 
-Second CLI main operation is robotic arm inverse kinematics calculation. Robot joints angles are returned in the same order as coresponding destination points. Inverse kinematics method must be set explicitly, **ann** or **fabrik**.
+Second is robotic arm inverse kinematics calculation. Robot joints angles are returned in the same order as coresponding destination points. Inverse kinematics method must be set explicitly, **ann** or **fabrik**.
 
 > usage: cli [-h] --inverse-kine --method {ann,fabrik} [--list-models] --points POINTS [--to-file TO_FILE] [--verbose] [--show-path] [--separate-plots]
 
-**--verbose** and **--to-file** parameters works here as well. ANN mandatory parameter is neural network model name, all available models in repository are in **models** directory, they can be listed by setting **--list-models** if ann algorithm was choosed. **--separate-plots** is used to separately plot input trajcetory and trajectory based on predicted angles.
+**--method** set inverse kinematics algorithm engine, **ann** or **fabrik**,
 
-> cli --inverse-kine --method ann --list-models
->> Available models:
->>> roboarm_model_1674153800-982793.h5
+**--model** mandatory parameter, it set neural net .h5 file model name which NN will be loaded from, settable only if **ann** IK method was choosed, all available models in repository are in **models** directory,
 
-For ANN algorithm **--model** parameter is mandatory:
+**--list-models** lists all models available inside defualt **models** directory,
+
+**--separate-plots** is used to separately plots input trajcetory and trajectory based on predicted angles,
+
+**--verbose** and **--to-file** parameters works here as well.
+
+Simple IK via ann example:
+
 > cli --inverse-kine --method ann --model models/roboarm_model_1674153800-982793.h5 --points spring.csv --verbose
 
-Same operation for **fabrik**:
+same operation for **fabrik**:
 
 > cli --inverse-kine --method fabrik --points spring.csv --verbose
 
