@@ -29,6 +29,7 @@ class ForwardKinematicsTest(unittest.TestCase):
             positions = [fka[0,3], fka[1,3], fka[2,3]]
             assert_array_almost_equal(dest, positions, decimal=4)
 
+
 def fwkine_test_suite():
     suite = unittest.TestSuite()
     suite.addTest(ForwardKinematicsTest('forward_kine'))

@@ -44,6 +44,7 @@ class AnnTest(unittest.TestCase):
         predicted = self.ann.predict(points)
         assert_almost_equal(predicted, output)
 
+
 def ann_test_suite():
     suite = unittest.TestSuite()
     suite.addTest(AnnTest('load_model'))

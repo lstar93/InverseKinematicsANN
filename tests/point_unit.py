@@ -35,6 +35,7 @@ class PointTest(unittest.TestCase):
         np_middle = (np.array(self.point_0)+np.array(self.point_1))/2
         assert_almost_equal(np_middle, middle)
 
+
 def point_test_suite():
     suite = unittest.TestSuite()
     suite.addTest(PointTest('to_list'))
