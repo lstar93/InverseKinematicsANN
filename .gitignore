@@ -1,10 +1,9 @@
 *.h5
 *.bin
 *.csv
-joint_controller.py
 __pycache__
 testmanual.py
 
-# do not ignore model file
+# do not ignore model files
 !models/*.h5
 !models/*.bin
