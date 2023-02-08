@@ -26,21 +26,21 @@ class AnnTest(unittest.TestCase):
     ann = ANN(robot.effector_workspace_limits, robot.dh_matrix)
 
     model_name = 'tests/test_model.h5'
-    model_prefix = 'saved_model'
+    model_prefix = 'tests/saved_model'
 
     def load_model(self):
         """ Model load test """
         assert self.ann.model is None
         model = self.ann.load_model(self.model_name)
-        assert model is None
+        assert model is not None
         assert self.ann.model is not None
 
     def save_model(self):
         """ Model save test """
         self.ann.save_model(self.model_prefix)
-        assert glob('saved_model*.h5')
-        assert glob('saved_model*_scaler_x.bin')
-        assert glob('saved_model*_scaler_y.bin')
+        assert glob('tests/saved_model*.h5')
+        assert glob('tests/saved_model*_scaler_x.bin')
+        assert glob('tests/saved_model*_scaler_y.bin')
 
     def predict(self):
         """ IK prediction via ANN test """

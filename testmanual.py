@@ -24,6 +24,7 @@ TODO:
 '''
 
 import sys
+from kinematics.fabrik import Fabrik
 from kinematics.point import Point
 from kinematics.forward import ForwardKinematics
 from kinematics.inverse import FabrikInverseKinematics, AnnInverseKinematics
@@ -156,7 +157,18 @@ if __name__ == '__main__':
             print(str(exception))
             sys.exit(0)
 
-        Plotter.plot_robot(predicted_all_joints_position, points)
+        # Plotter.plot_robot(predicted_all_joints_position, points)
+
+    fabrik = Fabrik(Robot.links_lengths)
+    fk, fkall = fkine.fkine(Robot.dh_matrix[0])
+    destination_point = [1,2,3]
+
+    starting_positions = [Point([fka[0,3], fka[1,3], fka[2,3]]) for fka in fkall]
+    calculated = fabrik.calculate(starting_positions, destination_point)
+
+    print(starting_positions)
+    print(calculated)
+    print(destination_point)
 
     # print(predicted_points)
     # Plotter.set_limits((0.998,1.002), (-1,3), (-1,3))
