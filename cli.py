@@ -38,7 +38,7 @@ class Command(ABC):
 class ShapeCommand(Command):
     """ Shape generator subclass """
     def verbose(self, data, generator):
-        """ Print verbose if user wants it """
+        """ Print output and plot shape """
         print(data)
         Plotter.plot_points_3d(generator)
 
@@ -61,7 +61,7 @@ class IkineCommand(Command):
         return fkine_points
 
     def verbose(self, points, joint_angles, separate_plots, show_path):
-        """ Print verbose if user wants it """
+        """ Print output and plot prediction """
         predicted_points = self.__forward_kinematics(joint_angles)
         if separate_plots:
             Plotter.plot_points_3d(points, show_path, dot_color='b')
@@ -80,7 +80,7 @@ class IkineCommand(Command):
 # Data generators commands
 
 class CircleCommand(ShapeCommand):
-    """ Circle points CLI generator """
+    """ Circle generator """
     COMMAND = 'circle'
 
     def __init__(self, parser):
@@ -107,7 +107,7 @@ class CircleCommand(ShapeCommand):
 
 
 class CubeCommand(ShapeCommand):
-    """ Cube points CLI generator """
+    """ Cube generator """
     COMMAND = 'cube'
 
     def __init__(self, parser):
@@ -123,7 +123,7 @@ class CubeCommand(ShapeCommand):
         dim = [float(pos) for pos in (known_args.dim.split(','))]
         start = [float(pos) for pos in (known_args.start.split(','))]
         if known_args.verbose:
-            self.verbose((step, dim, start), 
+            self.verbose((step, dim, start),
                           self.generator(step, *dim, start))
 
     def example(self):
@@ -131,7 +131,7 @@ class CubeCommand(ShapeCommand):
 
 
 class CubeRandomCommand(CubeCommand):
-    """ Random cube points CLI generator """
+    """ Random cube generator """
     COMMAND = 'cube_random'
 
     def __init__(self, parser):
@@ -143,7 +143,7 @@ class CubeRandomCommand(CubeCommand):
 
 
 class RandomCommand(ShapeCommand):
-    """ Random points CLI generator """
+    """ Random generator """
     COMMAND = 'random'
 
     def __init__(self, parser):
@@ -160,7 +160,7 @@ class RandomCommand(ShapeCommand):
                        'y': [float(pos) for pos in (limits[1].split(','))],
                        'z': [float(pos) for pos in (limits[2].split(','))]}
         if known_args.verbose:
-            self.verbose((samples, limits_dict), 
+            self.verbose((samples, limits_dict),
                           self.generator(samples, limits_dict))
 
     def example(self):
@@ -168,7 +168,7 @@ class RandomCommand(ShapeCommand):
 
 
 class SpringCommand(ShapeCommand):
-    """ Spring points CLI generator """
+    """ Spring generator """
     COMMAND = 'spring'
 
     def __init__(self, parser):
@@ -189,7 +189,7 @@ class SpringCommand(ShapeCommand):
 
 
 class RandomDistributionCommand(ShapeCommand):
-    """ Random distribution points CLI generator """
+    """ Random distribution generator """
     COMMAND = 'random_dist'
 
     def __init__(self, parser):
@@ -219,7 +219,7 @@ class RandomDistributionCommand(ShapeCommand):
 # Kinematics commands
 
 class InverseKineAnnCommand(IkineCommand):
-    """ Calculate inverse kinematics with ANN """
+    """ Calculate inverse kinematics using ANN """
     COMMAND = 'ann'
 
     def execute(self):
@@ -247,7 +247,7 @@ class InverseKineAnnCommand(IkineCommand):
 
 
 class InverseKineFabrikCommand(IkineCommand):
-    """ Calculate inverse kinematics with Fabrik """
+    """ Calculate inverse kinematics using Fabrik """
     COMMAND = 'fabrik'
 
     def execute(self):
@@ -304,7 +304,7 @@ class CommandExecutor():
 
 
 class CLIData:
-    """ Simple CLI to generate .csv with trajectories """
+    """ CLI to generate .csv with trajectories """
 
     def __init__(self, parser):
         """ Init parser and possible commands """
