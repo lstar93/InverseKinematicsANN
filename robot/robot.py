@@ -45,5 +45,3 @@ class SixDOFRobot():
 
 class OutOfRobotReachException(Exception):
     """ Robot manipulator exception class """
-
-robot = SixDOFRobot()
