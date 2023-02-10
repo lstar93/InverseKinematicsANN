@@ -326,7 +326,7 @@ class CLIData:
         self.parser.add_argument('--verbose', action='store_true')
         self.parser.add_argument('--example', action='store_true')
         self.parser.add_argument('--to-file', type=str)
-        
+
         self.executor.execute(known_args.shape)
 
 class CLIIkine:
