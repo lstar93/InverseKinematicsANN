@@ -7,7 +7,7 @@
 # pylint: disable=W0105 # string has no effect
 # pylint: disable=C0413 # imports should be placed at the top of the module
 
-import os
+
 import sys
 import argparse
 from abc import ABC, abstractmethod
