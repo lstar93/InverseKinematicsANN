@@ -329,6 +329,7 @@ class CLIData:
 
         self.executor.execute(known_args.shape)
 
+
 class CLIIkine:
     """ Inverse kinematics CLI """
 
