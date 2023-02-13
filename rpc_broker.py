@@ -53,7 +53,7 @@ def get_ikine_engine_cli():
 
 class IkineRPCBroker:
     """ RPC channel callback wrapper """
-    def __init__(self, ikine, host_ip = 'localhost', queue_name = 'ikine_queue'):
+    def __init__(self, ikine, host_ip = 'rabbit_mq', queue_name = 'ikine_queue'):
         """ Init ikine engine """
         # set engine
         self.__ikine = ikine
