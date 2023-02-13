@@ -22,10 +22,13 @@ services:
       timeout: 3s
       retries: 30
 
-  # produces container builds the rpc_broker image
-  # and produces message to the queue
+  # rpc broker container
   rpc_broker:
-    build: .
+    build:
+      context: .
+      args:
+        ik_method: 'ann'
+        ann_model: 'models/roboarm_model_1674153800-982793.h5'
     depends_on:
       rabbit_mq:
         condition: service_healthy
@@ -33,6 +36,7 @@ services:
         AMQP_URL: 'amqp://rabbit_mq?connection_attempts=10&retry_delay=10'
     volumes:
       - /usr/src/app/inversekine/rpc_broker
+
 
 volumes:
     rabbit_mqdata:

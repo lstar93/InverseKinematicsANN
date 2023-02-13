@@ -19,5 +19,11 @@ COPY models ./models
 COPY robot ./robot
 COPY rpc_broker.py .
 
-# start command
-CMD [ "python", "rpc_broker.py", "--method", "fabrik" ]
+ARG ik_method
+ENV env_ik_method=$ik_method
+
+ARG ann_model
+ENV env_ann_model=$ann_model
+
+# start rpc broker command
+CMD python rpc_broker.py --method ${env_ik_method} --model ${env_ann_model}
