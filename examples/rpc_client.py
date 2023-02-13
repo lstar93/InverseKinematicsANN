@@ -56,7 +56,7 @@ def main():
     # create rpc client
     client = IkineRPCClient()
     usage = "CLI Usage: rpc_client.py x,y,z;x,y,z;... "\
-        "example: rpc_client.py 1,2,3;4,-2.1,3;-1,-1,0.12"
+        "example: rpc_client.py 1,2,3;4,-2.1,3;1,-1,0.12"
 
     # assign postions
     positions_list = []

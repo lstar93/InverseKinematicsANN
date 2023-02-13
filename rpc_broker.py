@@ -9,7 +9,7 @@ import sys
 import os
 import argparse
 import json
-from pika import BlockingConnection, ConnectionParameters, BasicProperties
+from pika import BlockingConnection, ConnectionParameters, BasicProperties, URLParameters
 from kinematics.inverse import FabrikInverseKinematics, AnnInverseKinematics
 from robot.robot import OutOfRobotReachException
 from robot.robot import SixDOFRobot as Robot
@@ -53,7 +53,7 @@ def get_ikine_engine_cli():
 
 class IkineRPCBroker:
     """ RPC channel callback wrapper """
-    def __init__(self, ikine, host_ip = 'localhost', queue_name = 'ikine_queue'):
+    def __init__(self, ikine, host_ip = 'rabbit_mq', queue_name = 'ikine_queue'):
         """ Init ikine engine """
         # set engine
         self.__ikine = ikine
