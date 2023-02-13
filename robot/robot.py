@@ -43,5 +43,6 @@ class SixDOFRobot():
     effector_workspace_limits = {'x': [0,6], 'y': [-6,6], 'z': [-3,6]}
     links_lengths = [2, 2, 2, 2]
 
+
 class OutOfRobotReachException(Exception):
     """ Robot manipulator exception class """

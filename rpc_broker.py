@@ -14,11 +14,13 @@ from kinematics.inverse import FabrikInverseKinematics, AnnInverseKinematics
 from robot.robot import OutOfRobotReachException
 from robot.robot import SixDOFRobot as Robot
 
+
 DEBUG_MSG = False
 def debug_msg_print(msg):
     """ broker debug printouts """
     if DEBUG_MSG:
         print(msg)
+
 
 def get_ikine_engine_cli():
     """ Setup ikine engine via CLI """
@@ -48,6 +50,7 @@ def get_ikine_engine_cli():
                                          Robot.effector_workspace_limits)
     return engine
 
+
 class IkineRPCBroker:
     """ RPC channel callback wrapper """
     def __init__(self, ikine, host_ip = 'localhost', queue_name = 'ikine_queue'):
@@ -64,7 +67,7 @@ class IkineRPCBroker:
         self.__channel.basic_consume(queue=queue_name, on_message_callback=self.callback)
 
     def __exception_response(self, status, reason, corr_id):
-        """ Exception handler """
+        """ Exception response builder """
         return {'status' : status,
                 'reason' : reason,
                 'correlation_id' : corr_id}

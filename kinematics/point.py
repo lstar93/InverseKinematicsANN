@@ -8,11 +8,12 @@ from math import sqrt
 class Point(list):
     """ 3D point representation"""
     def __init__(self, xyz):
+        assert len(xyz) == 3, "3D Point input list size should be equal to 3"
         super().__init__(xyz)
         self.x, self.y, self.z = xyz
 
     def __str__(self):
-        aslist = [self.x, self.y, self.z]
+        aslist = super()
         return str(f'Point({aslist})')
 
     def __repr__(self):

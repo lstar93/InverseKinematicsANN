@@ -10,6 +10,7 @@ import numpy as np
 from scipy.stats import truncnorm
 from sklearn.preprocessing import minmax_scale
 
+
 def transpose(data):
     """ Transpose list """
     return list(map(list, zip(*data)))
@@ -72,8 +73,8 @@ class TrainingDataGenerator:
     def spring(no_of_samples, len_x, len_y, len_z):
         """ Horizontal spring shape """
         axis_z = np.linspace(0, len_z, no_of_samples)
-        axis_x = ((np.sin(axis_z)*len_x)+len_x)
-        axis_y = ((np.cos(axis_z)*len_y)+len_y)
+        axis_x = (np.sin(axis_z)*len_x)+len_x
+        axis_y = (np.cos(axis_z)*len_y)+len_y
         return [[x/2,y/2,z] for x,y,z in zip(axis_x, axis_y, axis_z)]
 
     @staticmethod

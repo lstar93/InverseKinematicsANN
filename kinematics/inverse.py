@@ -16,7 +16,7 @@ from robot.robot import OutOfRobotReachException
 np.set_printoptions(suppress=True)
 
 class InverseKinematics(ABC):
-    """ Inverse kinematics class """
+    """ Inverse kinematics base """
     def __init__(self, dh_matrix, joints_distances, workspace_limits):
         self.dh_matrix = dh_matrix
         self.joints_distances = joints_distances
@@ -24,7 +24,7 @@ class InverseKinematics(ABC):
         self.fkine = ForwardKinematics(self.dh_matrix)
 
     def check_limits(self, dest_points):
-        """ Check if all points in trajectory is in workspace limits """
+        """ Check if all points in trajectory fit in workspace limits """
         for dest_point in dest_points:
             # Effector limits check
             if any(dp < limitv[1][0] or dp > limitv[1][1] for dp, limitv in \
@@ -140,7 +140,7 @@ class FabrikInverseKinematics(InverseKinematics):
 
 
 class AnnInverseKinematics(InverseKinematics):
-    """ reaching inverse kinematics using Artificial NN method """
+    """ Reaching inverse kinematics using Artificial NN method """
     def __init__(self, dh_matrix, joints_distances, workspace_limits):
         super().__init__(dh_matrix, joints_distances, workspace_limits)
         self.ann = ANN(workspace_limits, dh_matrix)
