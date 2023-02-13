@@ -273,33 +273,15 @@ class InverseKineFabrikCommand(IkineCommand):
 
 class CommandExecutor():
     """ Command executor """
-    def __init__(self, parser):
-        self.parser = parser
-        self.commands = {
-            # data
-            CircleCommand.COMMAND: CircleCommand(self.parser),
-            CubeCommand.COMMAND: CubeCommand(self.parser),
-            CubeRandomCommand.COMMAND: CubeRandomCommand(self.parser),
-            RandomCommand.COMMAND: RandomCommand(self.parser),
-            SpringCommand.COMMAND: SpringCommand(self.parser),
-            RandomDistributionCommand.COMMAND: RandomDistributionCommand(self.parser),
-            # kinematics
-            InverseKineAnnCommand.COMMAND: InverseKineAnnCommand(self.parser),
-            InverseKineFabrikCommand.COMMAND: InverseKineFabrikCommand(self.parser),
-        }
 
-    def get_commands(self):
-        """ Get commands list """
-        return self.commands.keys()
-
-    def execute(self, command):
+    def execute(self, command: Command):
         """ Execute command """
-        self.commands[command].execute()
+        command.execute()
         sys.exit(0)
 
-    def example(self, command):
+    def example(self, command: Command):
         """ List command example and exit """
-        print(self.commands[command].example())
+        print(command.example())
         sys.exit(0)
 
 
@@ -309,24 +291,32 @@ class CLIData:
     def __init__(self, parser):
         """ Init parser and possible commands """
         self.parser = parser
-        self.executor = CommandExecutor(parser)
+        self.executor = CommandExecutor()
+        self.commands = {
+            CircleCommand.COMMAND: CircleCommand(self.parser),
+            CubeCommand.COMMAND: CubeCommand(self.parser),
+            CubeRandomCommand.COMMAND: CubeRandomCommand(self.parser),
+            RandomCommand.COMMAND: RandomCommand(self.parser),
+            SpringCommand.COMMAND: SpringCommand(self.parser),
+            RandomDistributionCommand.COMMAND: RandomDistributionCommand(self.parser)
+        }
 
     def cli(self):
         """ Parse CLI """
         self.parser.add_argument('--shape', required=True, type=str,
-                                choices=list(self.executor.get_commands()),
+                                choices=list(self.commands.keys()),
                                 help='select which shape should be generated')
         self.parser.add_argument('--example', action='store_true')
 
         known_args, _ = self.parser.parse_known_args()
 
         if known_args.example:
-            self.executor.example(known_args.shape)
+            self.executor.example(self.commands[known_args.shape])
 
         self.parser.add_argument('--verbose', action='store_true')
         self.parser.add_argument('--to-file', type=str)
 
-        self.executor.execute(known_args.shape)
+        self.executor.execute(self.commands[known_args.shape])
 
 
 class CLIIkine:
@@ -335,7 +325,11 @@ class CLIIkine:
     def __init__(self, parser):
         """ Init parser """
         self.parser = parser
-        self.executor = CommandExecutor(parser)
+        self.executor = CommandExecutor()
+        self.commands = {
+            InverseKineAnnCommand.COMMAND: InverseKineAnnCommand(self.parser),
+            InverseKineFabrikCommand.COMMAND: InverseKineFabrikCommand(self.parser)
+        }
 
     def cli(self):
         """ Inverse kinematics CLI """
@@ -346,7 +340,7 @@ class CLIIkine:
         known_args, _ = self.parser.parse_known_args()
 
         if known_args.example:
-            self.executor.example(known_args.method)
+            self.executor.example(self.commands[known_args.method])
 
         self.parser.add_argument('--points', type=str, required=True,
                                 help='.csv file name with stored trajectory points')
@@ -355,7 +349,7 @@ class CLIIkine:
         self.parser.add_argument('--show-path', action='store_true')
         self.parser.add_argument('--separate-plots', action='store_true')
 
-        self.executor.execute(known_args.method)
+        self.executor.execute(self.commands[known_args.method])
 
 
 def main():
