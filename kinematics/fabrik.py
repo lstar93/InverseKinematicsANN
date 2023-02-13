@@ -45,7 +45,7 @@ class Fabrik:
         """ Calculate all joints positions joining backward and forward methods """
         if not all(x == len(init_joints_positions)
                 for x in (len(init_joints_positions), len(self.joints_distances))):
-            raise Exception('Input vectors should have equal lengths!')
+            raise ValueError('Input vectors should have equal lengths!')
 
         current_join_positions = init_joints_positions
         start_point = init_joints_positions[0]

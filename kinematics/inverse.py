@@ -23,6 +23,17 @@ class InverseKinematics(ABC):
         self.workspace_limits = workspace_limits
         self.fkine = ForwardKinematics(self.dh_matrix)
 
+    def check_limits(self, dest_points):
+        """ Check if all points in trajectory is in workspace limits """
+        for dest_point in dest_points:
+            # Effector limits check
+            if any(dp < limitv[1][0] or dp > limitv[1][1] for dp, limitv in \
+                zip(dest_point, self.workspace_limits.items())):
+                raise OutOfRobotReachException(
+                    f'Inverse Kinematics exception, point {dest_point} '
+                        'is out of manipulator reach area! '
+                    f'Limits: {self.workspace_limits}')
+
     # calculate inverse kinematics
     @abstractmethod
     def ikine(self, dest_points):
@@ -66,7 +77,7 @@ class FabrikInverseKinematics(InverseKinematics):
         first_triangle = [point_a, point_c]
         a_to_c = get_distance_between(point_a, point_c)
         nominator = (pow(a_to_b,2) + pow(b_to_c,2) - pow(a_to_c,2))
-        denominator = (2 * a_to_b * b_to_c)
+        denominator = 2 * a_to_b * b_to_c
         acos_t2 = acos(round(nominator / denominator, rounding_upto))
         if point_c.x * point_d.x < 0: # if point C and D have opposite signs
             theta_2 = (3*pi/2) - acos_t2
@@ -77,7 +88,7 @@ class FabrikInverseKinematics(InverseKinematics):
         second_triangle = [point_b, point_d]
         b_to_d = get_distance_between(point_b, point_d)
         nominator = (pow(b_to_c,2) + pow(c_to_d,2) - pow(b_to_d,2))
-        denominator = (2 * b_to_c * c_to_d)
+        denominator = 2 * b_to_c * c_to_d
         acos_t3 = acos(round(nominator / denominator, rounding_upto))
         theta_3 = -(pi - acos_t3)
 
@@ -85,7 +96,7 @@ class FabrikInverseKinematics(InverseKinematics):
         third_triangle = [point_c, point_e]
         c_to_e = get_distance_between(point_c, point_e)
         nominator = (pow(c_to_d,2) + pow(d_to_e,2) - pow(c_to_e,2))
-        denominator = (2 * c_to_d * d_to_e)
+        denominator = 2 * c_to_d * d_to_e
         acos_t4 = acos(round(nominator / denominator, rounding_upto))
 
         t4_point_bt = get_point_between(point_c, point_e, get_distance_between(point_c, point_e)/2)
@@ -94,7 +105,7 @@ class FabrikInverseKinematics(InverseKinematics):
         if t4_distb > t4_dista:
             theta_4 = -(pi - acos_t4)
         else:
-            theta_4 = (pi - acos_t4)
+            theta_4 = pi - acos_t4
         # todo: n-th theta
 
         return [theta_1, theta_2, theta_3, theta_4],\
@@ -103,16 +114,10 @@ class FabrikInverseKinematics(InverseKinematics):
     # use one of methods to calculate inverse kinematics
     def ikine(self, dest_points):
         """ Calculate inverse kinematics """
+        self.check_limits(dest_points)
+
         ik_angles_ret = []
         for dest_point in dest_points:
-            # Effector limits check
-            if any(dp < limitv[1][0] or dp > limitv[1][1] for dp, limitv in \
-                zip(dest_point, self.workspace_limits.items())):
-                raise OutOfRobotReachException(
-                    f'Inverse Kinematics exception, point {dest_point} '
-                     'is out of manipulator reach area! '
-                    f'Limits: {self.workspace_limits}')
-
             # calculate theta_1 to get rid of horizontal move before FABRIK
             # theta_1 = float(atan2(dest_point[1], dest_point[0]))
             theta_1 = float(atan2(dest_point[1], dest_point[0]))
@@ -146,12 +151,5 @@ class AnnInverseKinematics(InverseKinematics):
 
     def ikine(self, dest_points):
         """ Predict thetas using neural network """
-        for dest_point in dest_points:
-            # Effector limits check
-            if any(dp < limitv[1][0] or dp > limitv[1][1] for dp, limitv in \
-                zip(dest_point, self.workspace_limits.items())):
-                raise OutOfRobotReachException(
-                    f'Inverse Kinematics exception, point {dest_point} '
-                     'is out of manipulator reach area! '
-                    f'Limits: {self.workspace_limits}')
+        self.check_limits(dest_points)
         return self.ann.predict(dest_points).tolist()
