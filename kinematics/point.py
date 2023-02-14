@@ -4,11 +4,13 @@
 # pylint: disable=C0103 # suppress invalid name for x, y and z
 
 from math import sqrt
+from numpy import array
 
 class Point(list):
     """ 3D point representation"""
     def __init__(self, xyz):
-        assert len(xyz) == 3, "3D Point input list size should be equal to 3"
+        if array(xyz).shape != (3,):
+            raise ValueError(f'3D Point input shape should be (3,) not {array(xyz).shape}')
         super().__init__(xyz)
         self.x, self.y, self.z = xyz
 

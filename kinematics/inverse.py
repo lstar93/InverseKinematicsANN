@@ -23,7 +23,7 @@ class InverseKinematics(ABC):
         self.workspace_limits = workspace_limits
         self.fkine = ForwardKinematics(self.dh_matrix)
 
-    def check_limits(self, dest_points):
+    def check_limits(self, dest_points: list[Point]):
         """ Check if all points in trajectory fit in workspace limits """
         for dest_point in dest_points:
             # Effector limits check
@@ -36,7 +36,7 @@ class InverseKinematics(ABC):
 
     # calculate inverse kinematics
     @abstractmethod
-    def ikine(self, dest_points):
+    def ikine(self, dest_points: list[Point]):
         """ Calculate inverse kinematics """
 
 
@@ -112,7 +112,7 @@ class FabrikInverseKinematics(InverseKinematics):
                [base, first_triangle, second_triangle, third_triangle]
 
     # use one of methods to calculate inverse kinematics
-    def ikine(self, dest_points):
+    def ikine(self, dest_points: list[Point]):
         """ Calculate inverse kinematics """
         self.check_limits(dest_points)
 
@@ -149,7 +149,7 @@ class AnnInverseKinematics(InverseKinematics):
         """ Load model from .h5 file """
         self.ann.load_model(model_name)
 
-    def ikine(self, dest_points):
+    def ikine(self, dest_points: list[Point]):
         """ Predict thetas using neural network """
         self.check_limits(dest_points)
         return self.ann.predict(dest_points).tolist()

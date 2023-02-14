@@ -11,6 +11,7 @@ import argparse
 import json
 from pika import BlockingConnection, ConnectionParameters, BasicProperties
 from kinematics.inverse import FabrikInverseKinematics, AnnInverseKinematics
+from kinematics.point import Point
 from robot.robot import OutOfRobotReachException
 from robot.robot import SixDOFRobot as Robot
 
@@ -74,28 +75,22 @@ class IkineRPCBroker:
 
     def callback(self, chan, method, props, body):
         """ Ikine rpc server callback """
-        positions_json = json.loads(body.decode())
-        positions = list(positions_json['positions'])
-
-        # create empty response dictionary
-        angles_dict = dict()
-
-        # calculate inverse kinematics
         try:
+            positions_json = json.loads(body.decode())
+            positions = [Point(x) for x in positions_json['positions']]
+            # create empty response dictionary
+            angles_dict = dict()
+            # calculate inverse kinematics
             angles = self.__ikine.ikine(positions)
-            angles_dict['status'] = 'OK'
-        except OutOfRobotReachException as exception:
+        except (OutOfRobotReachException, ValueError, TypeError) as exception:
             debug_msg_print(str(exception))
-            angles = None
             angles_dict = self.__exception_response('ERROR', str(exception), props.correlation_id)
-        except TypeError as type_exception:
-            debug_msg_print(str(type_exception))
-            angles = None
-            angles_dict = self.__exception_response('ERROR', str(exception), props.correlation_id)
-
-        # create response json from dict
-        angles_dict['angles'] = angles
-        angles_json = json.dumps(angles_dict)
+        else:
+            # create response json from dict
+            angles_dict['status'] = 'OK'
+            angles_dict['angles'] = angles
+        finally:
+            angles_json = json.dumps(angles_dict)
 
         # return angles to client
         chan.basic_publish(exchange='',

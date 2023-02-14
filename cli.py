@@ -369,7 +369,7 @@ def main():
         try:
             cli_ikine = CLIIkine(cliparser)
             cli_ikine.cli()
-        except OutOfRobotReachException as kine_exception:
+        except (OutOfRobotReachException, ValueError) as kine_exception:
             print(str(kine_exception))
 
     # or handle inverse kinematics data generators
