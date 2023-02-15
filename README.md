@@ -49,12 +49,12 @@ Full list of arguments for inverse kinematics
 --model                             model.h5         h5 file with pretrained ANN model.
 ```
 
-Example inverse kinematics command with **ann** method:
+Example inverse kinematics command with `ann` method:
 ```shell
 python cli.py --inverse-kine --method ann --model models/roboarm_model_1674153800-982793.h5 --points spring.csv --verbose
 ```
 
-same operation using **fabrik**:
+same operation using `fabrik`:
 ```shell
 python cli.py --inverse-kine --method fabrik --points spring.csv --verbose
 ```
