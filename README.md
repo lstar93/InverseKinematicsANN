@@ -14,74 +14,81 @@ There are two main user/programmer interfaces.
 
 ## How to use it
 ### CLI
-CLI can generates robot effector trajectory, save it to file, print to output and visualize using plots.
+You can use CLI to generate robot effector trajectory, save it to file, print to output and visualize using plots.
 
-> usage: cli [-h] --generate-data --shape {circle,cube,cube_random,random,spring,random_dist} [--verbose] [--example] [--to-file TO_FILE]
+```shell
+cli --generate-data --shape {circle,cube,cube_random,random,spring,random_dist} [--verbose] [--example] [--to-file TO_FILE]
+```
 
-**--shape** mandatory parameter to choose from available trajectory shapes,
+Full list of arguments for trajectory generator
+```shell
+--shape                             TEXT             Generator trajectory shape.
+--example                                            Show an example shape command.
+# -> --generate-data --shape circle --radius 3 --samples 20 --center 1,5,2
 
-**--example** show example shape command,
+--to-file                           FILENAME.csv     Redirect trajectory to csv file.
+--verbose                                            Plot trajectory and print points in command line.
+```
 
-**--to-file** redirect shape points list to .csv file, command argument is filename,
+You can also use CLI to calculate inverse kinematics for set of points.
 
-**--verbose** print calculated angles to output and show plot.
+```shell
+cli --inverse-kine --method {ann,fabrik} [--example] --points POINTS [--to-file TO_FILE] [--verbose] [--show-path] [--separate-plots] --model MODEL
+```
 
-Spring shape example:
+Full list of arguments for inverse kinematics
+```shell
+--method                            TEXT             Inverse kinematics engine, ann or fabrik.
+--example                                            Show an example shape command.
+--points                            FILENAME.csv     csv file with trajectory points.
+--to-file                           FILENAME.csv     Redicrect angles to csv file.
+--verbose                                            Plot trajectory and print angles in command line.
+--show-path                                          Join trajectory points on plot and show path.
+--separate-plots                                     Separate plots for assigned and predicted trajectory.
+--model                             model.h5         h5 file with pretrained ANN model.
+```
 
-> cli --generate-data --shape spring --samples 50 --dim 2,3,6
-
-CLI generates robotic arm inverse kinematics using **ann** or **fabrik** method.
-
-> usage: cli [-h] --inverse-kine --method {ann,fabrik} [--list-models] --points POINTS [--to-file TO_FILE] [--verbose] [--show-path] [--separate-plots]
-
-**--method** set inverse kinematics algorithm, **ann** or **fabrik**,
-
-**--model** load model of pretrained neural network from .h5 file, settable only if **ann** method was choosed,
-
-**--separate-plots** used to separately plot input trajcetory and trajectory based on predicted inverse kinematics,
-
-**--verbose** and **--to-file** parameters works the same as for trajectory.
-
-Example inverse kinematics calculated with **ann**:
-
-> cli --inverse-kine --method ann --model models/roboarm_model_1674153800-982793.h5 --points spring.csv --verbose
+Example inverse kinematics command with **ann** method:
+```shell
+python cli.py --inverse-kine --method ann --model models/roboarm_model_1674153800-982793.h5 --points spring.csv --verbose
+```
 
 same operation using **fabrik**:
-
-> cli --inverse-kine --method fabrik --points spring.csv --verbose
-
-angles are returned in the same order as coresponding effector destination points.
-
-
+```shell
+python cli.py --inverse-kine --method fabrik --points spring.csv --verbose
+```
 
 ### RPC broker
 
-#### Docker
-
-Docker container uses **ann** method and default model **roboarm_model_1674153800-982793.h5**.
-
-Start container:
-
-> docker-compose up
-
-if container is up, using example client is simple:
-
-> python examples/rpc_client.py
-
-command used without argument will show example usage.
-
 #### Command line
 
-To start broker within commandline first RabbitMQ service must be working. 
+To start broker within commandline first RabbitMQ service must be working on local machine. 
 
-Then start broker:
+```shell
+python rpc_broker.py --method ann --model models/roboarm_model_1674153800-982793.h5 
+```
 
-> python rpc_broker.py --method ann --model models/roboarm_model_1674153800-982793.h5 
+example client command:
 
-client command stays the same:
+```shell
+python examples/rpc_client.py
+```
 
-> python examples/rpc_client.py
+#### Docker
+Use the provided `docker-compose.yml` to run a container:
+```shell
+docker-compose up
+```
 
+Docker container use `ann` method and default model `roboarm_model_1674153800-982793.h5`.
+
+If container is up, using example client is simple:
+
+```shell
+python examples/rpc_client.py
+```
+
+command used without argument will show example usage.
 
 
 ## Demonstration
