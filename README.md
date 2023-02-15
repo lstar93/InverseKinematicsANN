@@ -24,7 +24,8 @@ Full list of arguments for trajectory generator
 ```shell
 --shape                             TEXT             Generator trajectory shape.
 --example                                            Show an example shape command.
-# -> --generate-data --shape circle --radius 3 --samples 20 --center 1,5,2
+# -> python cli.py --generate-data --shape circle --example
+# ... --generate-data --shape circle --radius 3 --samples 20 --center 1,5,2
 
 --to-file                           FILENAME.csv     Redirect trajectory to csv file.
 --verbose                                            Plot trajectory and print points in command line.
@@ -93,7 +94,7 @@ command used without argument will show example usage.
 
 ## Demonstration
 
-Robot inverse kinematics for trajectory below was calculated with **ann** model **roboarm_model_1674153800-982793.h5**.
+Robot inverse kinematics for trajectory below was calculated with `ann` model `roboarm_model_1674153800-982793.h5`.
 
 ![](sample.gif)
 
