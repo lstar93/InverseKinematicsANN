@@ -37,10 +37,10 @@ class Command(ABC):
 
 class ShapeCommand(Command):
     """ Shape generator subclass """
-    def verbose(self, data, generator):
+    def verbose(self, data, points):
         """ Print output and plot shape """
         print(data)
-        Plotter.plot_points_3d(generator)
+        Plotter.plot_points_3d(points)
 
     def save_to_csv(self, data, filename):
         """ Save data to csv file """
@@ -99,7 +99,7 @@ class CircleCommand(ShapeCommand):
         points = self.generator(radius, samples, center)
         if known_args.verbose:
             self.verbose((radius, samples, center), points)
-        if known_args.to_file:
+        if known_args.to_file is not None:
             self.save_to_csv(points, known_args.to_file)
 
     def example(self):
@@ -122,9 +122,11 @@ class CubeCommand(ShapeCommand):
         step = known_args.step
         dim = [float(pos) for pos in (known_args.dim.split(','))]
         start = [float(pos) for pos in (known_args.start.split(','))]
+        points = self.generator(step, *dim, start)
         if known_args.verbose:
-            self.verbose((step, dim, start),
-                          self.generator(step, *dim, start))
+            self.verbose((step, dim, start), points)
+        if known_args.to_file is not None:
+            self.save_to_csv(points, known_args.to_file)
 
     def example(self):
         return "--generate-data --shape cube --step 0.75 --dim 2,3,4 --start 1,2,3"
@@ -159,9 +161,11 @@ class RandomCommand(ShapeCommand):
         limits_dict = {'x': [float(pos) for pos in (limits[0].split(','))],
                        'y': [float(pos) for pos in (limits[1].split(','))],
                        'z': [float(pos) for pos in (limits[2].split(','))]}
+        points = self.generator(samples, limits_dict)
         if known_args.verbose:
-            self.verbose((samples, limits_dict),
-                          self.generator(samples, limits_dict))
+            self.verbose((samples, limits_dict), points)
+        if known_args.to_file is not None:
+            self.save_to_csv(points, known_args.to_file)
 
     def example(self):
         return "--generate-data --shape random --limits 0,3;0,4;0,5 --samples 20"
@@ -181,8 +185,11 @@ class SpringCommand(ShapeCommand):
         known_args, _ = self.parser.parse_known_args()
         samples = known_args.samples
         dim = [float(pos) for pos in (known_args.dim.split(','))]
-        print((samples, dim))
-        Plotter.plot_points_3d(self.generator(samples, *dim))
+        points = self.generator(samples, *dim)
+        if known_args.verbose:
+            self.verbose((samples, *dim), points)
+        if known_args.to_file is not None:
+            self.save_to_csv(points, known_args.to_file)
 
     def example(self):
         return "--generate-data --shape spring --samples 50 --dim 2,3,6"
@@ -210,7 +217,11 @@ class RandomDistributionCommand(ShapeCommand):
         limits_dict = {'x': [float(pos) for pos in (limits[0].split(','))],
                        'y': [float(pos) for pos in (limits[1].split(','))],
                        'z': [float(pos) for pos in (limits[2].split(','))]}
-        return (samples, std_dev, limits_dict), self.generator(samples, limits_dict, dist, std_dev)
+        points = self.generator(samples, limits_dict, dist, std_dev)
+        if known_args.verbose:
+            self.verbose((samples, limits_dict, dist, std_dev), points)
+        if known_args.to_file is not None:
+            self.save_to_csv(points, known_args.to_file)
 
     def example(self):
         return "--generate-data --shape random_dist --dist normal "\
@@ -233,14 +244,19 @@ class InverseKineAnnCommand(IkineCommand):
                                          Robot.links_lengths,
                                          Robot.effector_workspace_limits)
         ik_engine.load_model(model)
-        joint_angles = ik_engine.ikine(points)
 
-        if known_args.to_file is not None:
-            self.save_to_csv(joint_angles, known_args.to_file)
+        try:
+            joint_angles = ik_engine.ikine(points)
+        except (OutOfRobotReachException, ValueError) as kine_exception:
+            print(str(kine_exception))
+            return
 
         if known_args.verbose:
             self.verbose(points, joint_angles,
                 known_args.separate_plots, known_args.show_path)
+
+        if known_args.to_file is not None:
+            self.save_to_csv(joint_angles, known_args.to_file)
 
     def example(self):
         return "--inverse-kine --method ann --model model_filename.h5 --points filename.csv"
@@ -257,14 +273,18 @@ class InverseKineFabrikCommand(IkineCommand):
         ik_engine = FabrikInverseKinematics(Robot.dh_matrix,
                                             Robot.links_lengths,
                                             Robot.effector_workspace_limits)
-        joint_angles = ik_engine.ikine(points)
-
-        if known_args.to_file is not None:
-            self.save_to_csv(joint_angles, known_args.to_file)
+        try:
+            joint_angles = ik_engine.ikine(points)
+        except (OutOfRobotReachException, ValueError) as kine_exception:
+            print(str(kine_exception))
+            return
 
         if known_args.verbose:
             self.verbose(points, joint_angles,
                 known_args.separate_plots, known_args.show_path)
+
+        if known_args.to_file is not None:
+            self.save_to_csv(joint_angles, known_args.to_file)
 
     def example(self):
         return "--inverse-kine --method fabrik --points filename.csv"
@@ -285,14 +305,12 @@ class CommandExecutor():
         sys.exit(0)
 
 
-class CLIData:
-    """ CLI to generate .csv with trajectories """
-
-    def __init__(self, parser):
-        """ Init parser and possible commands """
-        self.parser = parser
+class CLI:
+    """ CLI class """
+    def __init__(self):
+        self.parser = argparse.ArgumentParser(prog='cli')
         self.executor = CommandExecutor()
-        self.commands = {
+        self.data_commands = {
             CircleCommand.COMMAND: CircleCommand(self.parser),
             CubeCommand.COMMAND: CubeCommand(self.parser),
             CubeRandomCommand.COMMAND: CubeRandomCommand(self.parser),
@@ -300,38 +318,29 @@ class CLIData:
             SpringCommand.COMMAND: SpringCommand(self.parser),
             RandomDistributionCommand.COMMAND: RandomDistributionCommand(self.parser)
         }
+        self.ikine_commands = {
+            InverseKineAnnCommand.COMMAND: InverseKineAnnCommand(self.parser),
+            InverseKineFabrikCommand.COMMAND: InverseKineFabrikCommand(self.parser)
+        }
 
-    def cli(self):
-        """ Parse CLI """
+    def __data_cli(self):
+        """ Data generator CLI """
         self.parser.add_argument('--shape', required=True, type=str,
-                                choices=list(self.commands.keys()),
+                                choices=list(self.data_commands.keys()),
                                 help='select which shape should be generated')
         self.parser.add_argument('--example', action='store_true')
 
         known_args, _ = self.parser.parse_known_args()
 
         if known_args.example:
-            self.executor.example(self.commands[known_args.shape])
+            self.executor.example(self.data_commands[known_args.shape])
 
         self.parser.add_argument('--verbose', action='store_true')
         self.parser.add_argument('--to-file', type=str)
 
-        self.executor.execute(self.commands[known_args.shape])
+        self.executor.execute(self.data_commands[known_args.shape])
 
-
-class CLIIkine:
-    """ Inverse kinematics CLI """
-
-    def __init__(self, parser):
-        """ Init parser """
-        self.parser = parser
-        self.executor = CommandExecutor()
-        self.commands = {
-            InverseKineAnnCommand.COMMAND: InverseKineAnnCommand(self.parser),
-            InverseKineFabrikCommand.COMMAND: InverseKineFabrikCommand(self.parser)
-        }
-
-    def cli(self):
+    def __ikine_cli(self):
         """ Inverse kinematics CLI """
         self.parser.add_argument('--method', required=True, type=str, choices=['ann', 'fabrik'],
                                 help='select inverse kinematics method, Neural Network or Fabrik')
@@ -340,7 +349,7 @@ class CLIIkine:
         known_args, _ = self.parser.parse_known_args()
 
         if known_args.example:
-            self.executor.example(self.commands[known_args.method])
+            self.executor.example(self.ikine_commands[known_args.method])
 
         self.parser.add_argument('--points', type=str, required=True,
                                 help='.csv file name with stored trajectory points')
@@ -349,34 +358,31 @@ class CLIIkine:
         self.parser.add_argument('--show-path', action='store_true')
         self.parser.add_argument('--separate-plots', action='store_true')
 
-        self.executor.execute(self.commands[known_args.method])
+        self.executor.execute(self.ikine_commands[known_args.method])
 
+    def cli(self, args = None):
+        """ cli method """
+        group = self.parser.add_mutually_exclusive_group()
+        group.add_argument('--inverse-kine', action='store_true')
+        group.add_argument('--generate-data', action='store_true')
+
+        cliargs = sys.argv[1:] if args is None else args
+        cli_known_args, _ = self.parser.parse_known_args(cliargs)
+
+        if cli_known_args.inverse_kine is False and cli_known_args.generate_data is False:
+            self.parser.error('Operation --inverse-kine or --generate-data must be choosed')
+
+        # Handle inverse kinematics CLI
+        if cli_known_args.inverse_kine:
+            self.__ikine_cli()
+        # or handle inverse kinematics data generators
+        elif cli_known_args.generate_data:
+            self.__data_cli()
 
 def main():
     """ main function """
-    cliparser = argparse.ArgumentParser(prog='cli')
-    group = cliparser.add_mutually_exclusive_group()
-    group.add_argument('--inverse-kine', action='store_true')
-    group.add_argument('--generate-data', action='store_true')
-
-    cli_known_args, _ = cliparser.parse_known_args()
-
-    if cli_known_args.inverse_kine is False and cli_known_args.generate_data is False:
-        cliparser.error('Operation --inverse-kine or --generate-data must be choosed')
-
-    # Handle inverse kinematics CLI
-    if cli_known_args.inverse_kine:
-        try:
-            cli_ikine = CLIIkine(cliparser)
-            cli_ikine.cli()
-        except (OutOfRobotReachException, ValueError) as kine_exception:
-            print(str(kine_exception))
-
-    # or handle inverse kinematics data generators
-    elif cli_known_args.generate_data:
-        cli_data_generators = CLIData(cliparser)
-        cli_data_generators.cli()
-
+    cli = CLI()
+    cli.cli()
 
 if __name__ == '__main__':
     main()
