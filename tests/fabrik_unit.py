@@ -1,4 +1,4 @@
-""" ANN unit tests """
+""" Fabrik unit tests """
 #!/usr/bin/env python
 
 # pylint: disable=C0103
