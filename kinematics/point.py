@@ -6,26 +6,28 @@
 from math import sqrt
 from numpy import array
 
+
 class Point(list):
     """ 3D point representation"""
-    def __init__(self, xyz):
+    def __init__(self, xyz: list):
         if array(xyz).shape != (3,):
             raise ValueError(f'3D Point input shape should be (3,) not {array(xyz).shape}')
         super().__init__(xyz)
         self.x, self.y, self.z = xyz
 
     def __str__(self):
-        aslist = super()
-        return str(f'Point({aslist})')
+        return str(f'Point{self.x, self.y, self.z}')
 
     def __repr__(self):
-        return str(self)
+        return f'<Point at 0x{id(self):x}, x={self.x}, y={self.y}, z={self.z}>'
+
 
 def get_distance_between(point_a, point_b):
     """ Calculate distance between two points """
     return sqrt(pow((point_a.x - point_b.x), 2) +
                 pow((point_a.y - point_b.y), 2) +
                 pow((point_a.z - point_b.z), 2))
+
 
 def get_point_between(start_point, end_point, distance = None):
     """ Calculate coordinates of Point in given distance or between two other points"""
