@@ -6,16 +6,16 @@
 from math import sqrt
 from numpy import array
 
-class Point():
+class Point(list):
     """ 3D point representation"""
     def __init__(self, xyz: list):
-        self.xyz = xyz
         if array(xyz).shape != (3,):
             raise ValueError(f'3D Point input shape should be (3,) not {array(xyz).shape}')
+        super().__init__(xyz)
         self.x, self.y, self.z = xyz
 
     def __str__(self):
-        return str(f'Point({self.xyz})')
+        return str(f'Point([{self.x, self.y, self.z}])')
 
     def __repr__(self):
         return f'<Point at {hex(id(self))}, x={self.x}, y={self.y}, z={self.z}>'

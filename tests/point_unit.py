@@ -22,7 +22,7 @@ class PointTest(unittest.TestCase):
 
     def create(self):
         test0 = Point([0, 0, 0])
-        with assert_raises(AssertionError):
+        with assert_raises(ValueError):
             test1 = Point([0, 0, 0, 1])
 
     def to_list(self):
