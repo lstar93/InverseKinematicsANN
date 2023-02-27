@@ -6,20 +6,19 @@
 from math import sqrt
 from numpy import array
 
-class Point(list):
+class Point():
     """ 3D point representation"""
-    def __init__(self, xyz):
+    def __init__(self, xyz: list):
+        self.xyz = xyz
         if array(xyz).shape != (3,):
             raise ValueError(f'3D Point input shape should be (3,) not {array(xyz).shape}')
-        super().__init__(xyz)
         self.x, self.y, self.z = xyz
 
     def __str__(self):
-        aslist = super()
-        return str(f'Point({aslist})')
+        return str(f'Point({self.xyz})')
 
     def __repr__(self):
-        return str(self)
+        return f'<Point at {hex(id(self))}, x={self.x}, y={self.y}, z={self.z}>'
 
 def get_distance_between(point_a, point_b):
     """ Calculate distance between two points """
