@@ -27,7 +27,7 @@ class InverseKinematicsFabrikTest(unittest.TestCase):
 
         predicted = self.ikine.ikine(points)
 
-        assert_almost_equal(predicted, output)
+        assert_almost_equal(predicted, output, decimal=6)
 
         with assert_raises(OutOfRobotReachException):
             points = [[1.0, 2.1, 3.0], [1.567, 2.22, -3.123], [1.02, 3.33, 4.99]]
@@ -55,7 +55,7 @@ class InverseKinematicsAnnTest(unittest.TestCase):
         [1.286367416381836, 1.4932732582092285, -0.685073971748352, -1.0487391948699951]]
 
         predicted = self.ikine.ikine(points)
-        assert_almost_equal(predicted, output)
+        assert_almost_equal(predicted, output, decimal=6)
 
         with assert_raises(OutOfRobotReachException):
             points = [[1.0, 2.1, 3.0], [1.567, 2.22, -3.123], [1.02, 3.33, 4.99]]

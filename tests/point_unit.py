@@ -6,6 +6,7 @@
 # pylint: disable=C0115
 # pylint: disable=W0612 :unused-variable
 
+
 import unittest
 import numpy as np
 from numpy.testing import assert_almost_equal, assert_raises
@@ -21,9 +22,9 @@ class PointTest(unittest.TestCase):
     distance = 3.831649
 
     def create(self):
-        test0 = Point([0, 0, 0])
+        test0 = Point([0, 0, 0])  # noqa: F841
         with assert_raises(ValueError):
-            test1 = Point([0, 0, 0, 1])
+            test1 = Point([0, 0, 0, 1])  # noqa: F841
 
     def to_list(self):
         """ Point to list transofrmation """

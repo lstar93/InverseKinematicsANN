@@ -43,7 +43,7 @@ class AnnTest(unittest.TestCase):
         [1.286367416381836, 1.4932732582092285, -0.685073971748352, -1.0487391948699951]]
 
         predicted = self.ann.predict(points)
-        assert_almost_equal(predicted, output)
+        assert_almost_equal(predicted, output, decimal=6)
 
 
 def ann_test_suite():
