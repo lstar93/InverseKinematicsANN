@@ -3,6 +3,7 @@
 *.csv
 __pycache__
 testmanual.py
+venv
 
 # do not ignore model files
 !models/*.h5
